@@ -1,0 +1,13 @@
+# Core dependencies
+flask==2.3.3
+requests==2.31.0
+pysolr==3.9.0
+
+# Progress bars and utilities
+tqdm==4.66.1
+
+# Production server (optional)
+gunicorn==21.2.0
+
+# Development dependencies (optional)
+flask-cors==4.0.0
