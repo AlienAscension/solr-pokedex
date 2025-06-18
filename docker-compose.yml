@@ -1,7 +1,8 @@
+
 services:
   # Apache Solr Search Engine
   solr:
-    image: solr:9.4
+    image: docker.io/library/solr:9.4
     container_name: pokemon-solr
     ports:
       - "8983:8983"
