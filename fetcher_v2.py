@@ -123,6 +123,8 @@ class PokemonFetcher:
             {'name': 'hidden_abilities', 'type': 'strings'},
             {'name': 'all_abilities', 'type': 'strings'},
             {'name': 'evolves_from', 'type': 'string'},
+
+            {'name': 'levelup_moves', 'type': 'strings', 'multiValued': True},
         ]
         
         headers = {'Content-type': 'application/json'}
@@ -332,6 +334,17 @@ class PokemonFetcher:
         
         doc.update(stats)
         doc['total_stats'] = total_stats
+
+        # Moves learned by leveling up
+        levelup_moves = set() # Use a set to store unique move names
+        for move_info in basic_data.get('moves', []):
+            for version_detail in move_info.get('version_group_details', []):
+                learn_method = version_detail.get('move_learn_method', {}).get('name')
+                if learn_method == 'level-up':
+                    move_name = move_info['move']['name'].replace('-', ' ').title()
+                    levelup_moves.add(move_name)
+        
+        doc['levelup_moves'] = sorted(list(levelup_moves)) # Add the sorted list to the doc
         
         # Species information
         if species_data:
