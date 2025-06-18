@@ -697,6 +697,7 @@
                 const types = pokemon.types || [];
                 const abilities = pokemon.abilities || [];
                 const flavorText = pokemon.flavor_text || 'No description available.';
+                const levelupMoves = pokemon.levelup_moves || [];
 
                 this.modalBody.innerHTML = `
                     <img src="${imageUrl}" alt="${pokemon.name}" class="modal-pokemon-image" onerror="this.style.display='none'">
@@ -727,6 +728,14 @@
                         <div class="modal-section-title">Abilities</div>
                         <div class="ability-list">
                             ${abilities.map(ability => `<span class="ability-tag">${ability}</span>`).join('')}
+                        </div>
+                    </div>` : ''}
+
+                    ${levelupMoves.length > 0 ? `
+                    <div class="modal-section">
+                        <div class="modal-section-title">Level-Up Moves</div>
+                        <div class="ability-list">
+                            ${levelupMoves.map(move => `<span class="ability-tag move-tag">${move}</span>`).join('')}
                         </div>
                     </div>` : ''}
 
