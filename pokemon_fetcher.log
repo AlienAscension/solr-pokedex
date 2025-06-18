@@ -526,3 +526,58 @@
 2025-06-18 13:51:58,283 - INFO - Finished 'http://localhost:8983/solr/pokemon/update/?commit=true' (post) with body '<optimize ' in 0.003 seconds, with status 200
 2025-06-18 13:51:58,284 - INFO - Successfully indexed all documents!
 2025-06-18 13:51:58,284 - INFO - Successfully processed 386 Pokemon total!
+2025-06-18 15:59:49,519 - INFO - Initialized Pokemon fetcher
+2025-06-18 15:59:49,524 - INFO - Finished 'http://localhost:8983/solr/pokemon/admin/ping/?' (get) with body '' in 0.005 seconds, with status 200
+2025-06-18 15:59:49,524 - INFO - Successfully connected to Solr
+2025-06-18 15:59:49,525 - INFO - Verifying and updating Solr schema for sorting and faceting...
+2025-06-18 15:59:49,729 - INFO - Successfully configured existing field 'pokemon_id'.
+2025-06-18 15:59:49,870 - INFO - Successfully configured existing field 'name'.
+2025-06-18 15:59:49,964 - INFO - Successfully configured existing field 'height'.
+2025-06-18 15:59:50,054 - INFO - Successfully configured existing field 'weight'.
+2025-06-18 15:59:50,146 - INFO - Successfully configured existing field 'base_experience'.
+2025-06-18 15:59:50,237 - INFO - Successfully configured existing field 'primary_type'.
+2025-06-18 15:59:50,317 - INFO - Successfully configured existing field 'total_stats'.
+2025-06-18 15:59:50,402 - INFO - Successfully configured existing field 'generation'.
+2025-06-18 15:59:50,485 - INFO - Successfully configured existing field 'color'.
+2025-06-18 15:59:50,572 - INFO - Successfully configured existing field 'habitat'.
+2025-06-18 15:59:50,650 - INFO - Successfully configured existing field 'capture_rate'.
+2025-06-18 15:59:50,747 - INFO - Successfully configured existing field 'is_legendary'.
+2025-06-18 15:59:50,847 - INFO - Successfully configured existing field 'is_mythical'.
+2025-06-18 15:59:50,928 - INFO - Successfully configured existing field 'stat_hp'.
+2025-06-18 15:59:51,076 - INFO - Successfully configured existing field 'stat_attack'.
+2025-06-18 15:59:51,202 - INFO - Successfully configured existing field 'stat_defense'.
+2025-06-18 15:59:51,284 - INFO - Successfully configured existing field 'stat_special_attack'.
+2025-06-18 15:59:51,370 - INFO - Successfully configured existing field 'stat_special_defense'.
+2025-06-18 15:59:51,478 - INFO - Successfully configured existing field 'stat_speed'.
+2025-06-18 15:59:51,574 - INFO - Successfully configured existing field 'id'.
+2025-06-18 15:59:51,697 - INFO - Successfully configured existing field 'flavor_text'.
+2025-06-18 15:59:51,799 - INFO - Successfully configured existing field 'types'.
+2025-06-18 15:59:51,882 - INFO - Successfully configured existing field 'secondary_type'.
+2025-06-18 15:59:51,950 - INFO - Successfully configured existing field 'abilities'.
+2025-06-18 15:59:52,029 - INFO - Successfully configured existing field 'hidden_abilities'.
+2025-06-18 15:59:52,131 - INFO - Successfully configured existing field 'all_abilities'.
+2025-06-18 15:59:52,216 - INFO - Successfully configured existing field 'evolves_from'.
+2025-06-18 15:59:52,220 - WARNING - Field 'levelup_moves' not found. Attempting to add it.
+2025-06-18 15:59:52,293 - INFO - Successfully ADDED new field 'levelup_moves'.
+2025-06-18 15:59:52,293 - INFO - Schema verification and configuration complete.
+2025-06-18 15:59:52,293 - INFO - Clearing existing Solr data...
+2025-06-18 15:59:52,364 - INFO - Finished 'http://localhost:8983/solr/pokemon/update/?commit=true' (post) with body '<delete><q' in 0.071 seconds, with status 200
+2025-06-18 15:59:52,364 - INFO - Fetching Generation 1 Pokemon (#1-#151)
+2025-06-18 16:00:29,186 - INFO - Generation 1: 151 Pokemon fetched
+2025-06-18 16:00:29,186 - INFO - Fetching Generation 2 Pokemon (#152-#251)
+2025-06-18 16:00:53,334 - INFO - Generation 2: 100 Pokemon fetched
+2025-06-18 16:00:53,334 - INFO - Fetching Generation 3 Pokemon (#252-#386)
+2025-06-18 16:01:26,461 - INFO - Generation 3: 135 Pokemon fetched
+2025-06-18 16:01:26,461 - INFO - Indexing 386 documents into Solr...
+2025-06-18 16:01:26,694 - INFO - Finished 'http://localhost:8983/solr/pokemon/update/?commit=true' (post) with body '[{"id": "1' in 0.233 seconds, with status 200
+2025-06-18 16:01:26,812 - INFO - Finished 'http://localhost:8983/solr/pokemon/update/?commit=true' (post) with body '[{"id": "5' in 0.116 seconds, with status 200
+2025-06-18 16:01:26,918 - INFO - Finished 'http://localhost:8983/solr/pokemon/update/?commit=true' (post) with body '[{"id": "1' in 0.105 seconds, with status 200
+2025-06-18 16:01:27,027 - INFO - Finished 'http://localhost:8983/solr/pokemon/update/?commit=true' (post) with body '[{"id": "1' in 0.108 seconds, with status 200
+2025-06-18 16:01:27,132 - INFO - Finished 'http://localhost:8983/solr/pokemon/update/?commit=true' (post) with body '[{"id": "2' in 0.104 seconds, with status 200
+2025-06-18 16:01:27,234 - INFO - Finished 'http://localhost:8983/solr/pokemon/update/?commit=true' (post) with body '[{"id": "2' in 0.101 seconds, with status 200
+2025-06-18 16:01:27,336 - INFO - Finished 'http://localhost:8983/solr/pokemon/update/?commit=true' (post) with body '[{"id": "3' in 0.101 seconds, with status 200
+2025-06-18 16:01:27,425 - INFO - Finished 'http://localhost:8983/solr/pokemon/update/?commit=true' (post) with body '[{"id": "3' in 0.088 seconds, with status 200
+2025-06-18 16:01:27,425 - INFO - Optimizing Solr index...
+2025-06-18 16:01:27,429 - INFO - Finished 'http://localhost:8983/solr/pokemon/update/?commit=true' (post) with body '<optimize ' in 0.004 seconds, with status 200
+2025-06-18 16:01:27,429 - INFO - Successfully indexed all documents!
+2025-06-18 16:01:27,430 - INFO - Successfully processed 386 Pokemon total!
