@@ -45,13 +45,20 @@ The script will handle:
 ### Option 2: Manual Setup
 If you prefer to set up manually or need to troubleshoot:
 
-#### 1. Create Python Virtual Environment
+
+#### 1. Clone this Repo
+```
+git clone https://github.com/AlienAscension/solr-pokedex
+```
+
+
+#### 2. Create Python Virtual Environment
 Navigate to the project root directory and create a virtual environment:
 ```bash
 python3 -m venv venv
 ```
 
-#### 2. Activate Virtual Environment
+#### 3. Activate Virtual Environment
 **On Linux/macOS:**
 ```bash
 source venv/bin/activate
@@ -61,28 +68,28 @@ source venv/bin/activate
 venv\Scripts\Activate.ps1
 ```
 
-#### 3. Install Dependencies
+#### 4. Install Dependencies
 With the virtual environment activated, install the required packages:
 ```bash
 pip install -r requirements.txt
 ```
 
-#### 4. Make Fetcher Script Executable
+#### 5. Make Fetcher Script Executable
 ```bash
 chmod +x fetcher_v2.py
 ```
 
-#### 5. Start Solr Service
+#### 6. Start Solr Service
 Start the Solr container using Docker Compose:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 Or with Podman:
 ```bash
-podman-compose up -d
+podman compose up -d
 ```
 
-#### 6. Fetch Pokémon Data
+#### 7. Fetch Pokémon Data
 Run the fetcher script to populate Solr with Pokémon data:
 ```bash
 ./fetcher_v2.py
