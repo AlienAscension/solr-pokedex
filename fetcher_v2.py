@@ -21,7 +21,7 @@ Requirements:
 Usage:
     python pokemon_fetcher.py
 
-Author: Linus Breitenberger (with updates)
+Author: Linus Breitenberger
 """
 
 import requests
@@ -114,7 +114,6 @@ class PokemonFetcher:
             {'name': 'stat_speed', 'type': 'pint', 'docValues': True},
 
             # Add definitions for other fields created by the script
-            # These don't strictly need docValues but defining them is good practice
             {'name': 'id', 'type': 'string', 'required': True}, # 'id' is special
             {'name': 'flavor_text', 'type': 'text_en'},
             {'name': 'types', 'type': 'strings'},
