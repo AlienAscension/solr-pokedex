@@ -130,7 +130,7 @@ Check `pokemon_fetcher.log` for data fetching logs and debugging information.
 ## Troubleshooting
 
 1. **Container Issues**: Ensure Docker/Podman is running and you have sufficient permissions
-2. **Port Conflicts**: Check if ports 8080 (web app) and 8983 (Solr) are available
+2. **Port Conflicts**: Check if ports 5000 (web app) and 8983 (Solr) are available
 3. **Virtual Environment**: Make sure the virtual environment is activated before running the fetcher
 4. **Dependencies**: Verify all requirements are installed with `pip list`
 
