@@ -12,7 +12,6 @@ solr-pokedex/
 ├── requirements.txt           # Python dependencies
 ├── solr/                      # Solr configuration
 │   └── configsets/           # Solr schema configurations
-├── venv/                     # Python virtual environment
 └── web/                      # Web application
     ├── Dockerfile            # Web app Docker configuration
     ├── requirements.txt      # Web app specific dependencies
