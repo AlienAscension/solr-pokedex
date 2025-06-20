@@ -163,9 +163,15 @@ class PokemonSearchApp:
         
         # Handle full-text search
         if query != '*:*' and not ':' in query:
-            # Search across name, types, abilities, and flavor text
-            query = f'(name:*{query}* OR types:*{query}* OR all_abilities:*{query}* OR flavor_text:{query})'
-        
+            # NEW: Check if the user intended a phrase search
+            if query.startswith('"') and query.endswith('"'):
+                # It's a phrase search. Target the most likely text fields.
+                # The query already contains the quotes, which is correct for Solr's syntax.
+                query = f'(flavor_text:{query} OR name:{query})'
+            else:
+                # It's a standard keyword search. Use wildcards.
+                query = f'(name:*{query}* OR types:*{query}* OR all_abilities:*{query}* OR flavor_text:{query})'
+
         filters = []
         
         # Add filters
