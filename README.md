@@ -105,6 +105,44 @@ Apache Solr admin interface is available at:
 http://localhost:8983
 ```
 
+## How to Use the Search Interface
+The search bar provides a powerful way to find Pokémon using simple text or advanced Solr query syntax. The engine supports several types of searches:
+
+### Search Capabilities
+
+*   **Keyword Search**: This is the default search behavior. Simply typing a term into the search bar performs a broad, case-insensitive search across key fields like Pokémon Name, Types, Abilities, and Flavor Text.
+    *   **Example:** A search for `stone` will find Pokémon of the `rock` type (a synonym), Pokémon like `Onix` (described as a stone snake), and Pokémon with abilities like `Sturdy`.
+
+*   **Phrase Search**: To search for an exact sequence of words, enclose the phrase in double quotes (`"`). The search will look for the exact phrase in the Pokémon's name and flavor text.
+    *   **Example:** `"stores electricity in its cheeks"` will  find Pokémon like Pikachu and Pichu, without needing a field specifier.
+
+*   **Wildcard Search**: Use the asterisk (`*`) as a wildcard to match any sequence of characters. This is automatically used in keyword searches but can also be used in advanced field-based searches.
+    *   **Example:** In an advanced query, `name:*saur` will find Bulbasaur, Ivysaur, and Venusaur.
+
+*   **Faceted Search **: This feature allows you to refine and filter your search results. The UI displays available filters (like Generation, Primary Type, Legendary) along with a count of matching Pokémon for each filter. Clicking on these categories allows you to progressively narrow down your results.
+
+### Advanced (Field-Based) Search
+For more specific queries, you can still use the `field:value` syntax in the search bar.
+
+**Syntax:** `fieldName:searchTerm`
+
+**Commonly Used Fields:**
+- `pokemon_id`: The official Pokédex number (e.g., `pokemon_id:25`)
+- `name`: The Pokémon's name. Supports wildcards (e.g., `name:*saur`)
+- `primary_type`: The primary type (e.g., `primary_type:fire`)
+- `generation`: The game generation (e.g., `generation:1`)
+- `all_abilities`: Searches both regular and hidden abilities (e.g., `all_abilities:intimidate`)
+- `is_legendary`: `true` or `false`
+- `base_attack`, `base_defense`, `base_hp`: Base stat values. Supports range queries (e.g., `base_attack:[121 TO *]`)
+
+### Combining Queries
+You can combine multiple queries using boolean operators `AND`, `OR`, and `NOT`. You can use parentheses `()` to group conditions.
+
+**Examples:**
+- Find Fire or Water type Pokémon: `primary_type:fire OR primary_type:water`
+- Find Generation 1 Pokémon that are also Legendary: `generation:1 AND is_legendary:true`
+- Find Generation 1 Ghost type Pokémon or Generation 2 Fairy type Pokémon: `(generation:1 AND primary_type:ghost) OR (generation:1 AND primary_type:fairy)`
+
 ## Features
 - **Search Interface**: Web-based search for Pokémon
 - **Solr Integration**: Fast, scalable search using Apache Solr
