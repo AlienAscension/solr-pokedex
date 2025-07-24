@@ -149,52 +149,48 @@ class PokemonSearchApp {
                 const levelupMoves = pokemon.levelup_moves || [];
 
                 this.modalBody.innerHTML = `
+                    <img src="${imageUrl}" alt="${pokemon.name}" class="modal-pokemon-image" onerror="this.style.display='none'">
+                    
+                    <div class="modal-pokemon-header">
+                        <div class="modal-pokemon-name">${pokemon.name}</div>
+                        <div class="modal-pokemon-id">#${String(pokemon.pokemon_id).padStart(3, '0')}</div>
+                    </div>
 
-                    <div class="split-modal">
-                        <div>
-                        
-                            <img src="${imageUrl}" alt="${pokemon.name}" class="modal-pokemon-image" onerror="this.style.display='none'">
-                            <div class="modal-pokemon-header">
-                                <div class="modal-pokemon-name">${pokemon.name}</div>
-                                <div class="modal-pokemon-id">#${String(pokemon.pokemon_id).padStart(3, '0')}</div>
-                            </div>
-                            <div class="modal-types">
-                                ${types.map(type => `<span class="type-badge type-${type}">${type}</span>`).join('')}
-                            </div>
-                            <div class="modal-section">
-                                <div class="modal-section-title">Stats</div>
-                                <div class="pokemon-stats modal-stats-grid">
-                                    <div class="stat-item"><div class="stat-label">HP</div><div class="stat-value">${pokemon.stat_hp || 0}</div></div>
-                                    <div class="stat-item"><div class="stat-label">Attack</div><div class="stat-value">${pokemon.stat_attack || 0}</div></div>
-                                    <div class="stat-item"><div class="stat-label">Defense</div><div class="stat-value">${pokemon.stat_defense || 0}</div></div>
-                                    <div class="stat-item"><div class="stat-label">Sp. Atk</div><div class="stat-value">${pokemon['stat_special-attack'] || 0}</div></div>
-                                    <div class="stat-item"><div class="stat-label">Sp. Def</div><div class="stat-value">${pokemon['stat_special-defense'] || 0}</div></div>
-                                    <div class="stat-item"><div class="stat-label">Speed</div><div class="stat-value">${pokemon.stat_speed || 0}</div></div>
-                                </div>
-                            </div>
+                    <div class="modal-types">
+                        ${types.map(type => `<span class="type-badge type-${type}">${type}</span>`).join('')}
+                    </div>
+
+                    <div class="modal-section">
+                        <div class="modal-section-title">Stats</div>
+                        <div class="pokemon-stats modal-stats-grid">
+                            <div class="stat-item"><div class="stat-label">HP</div><div class="stat-value">${pokemon.stat_hp || 0}</div></div>
+                            <div class="stat-item"><div class="stat-label">Attack</div><div class="stat-value">${pokemon.stat_attack || 0}</div></div>
+                            <div class="stat-item"><div class="stat-label">Defense</div><div class="stat-value">${pokemon.stat_defense || 0}</div></div>
+                            <div class="stat-item"><div class="stat-label">Sp. Atk</div><div class="stat-value">${pokemon['stat_special-attack'] || 0}</div></div>
+                            <div class="stat-item"><div class="stat-label">Sp. Def</div><div class="stat-value">${pokemon['stat_special-defense'] || 0}</div></div>
+                            <div class="stat-item"><div class="stat-label">Speed</div><div class="stat-value">${pokemon.stat_speed || 0}</div></div>
                         </div>
-                            <div>
-                            ${abilities.length > 0 ? `
-                            <div class="modal-section">
-                                <div class="modal-section-title">Abilities</div>
-                                <div class="ability-list">
-                                    ${abilities.map(ability => `<span class="ability-tag">${ability}</span>`).join('')}
-                                </div>
-                            </div>` : ''}
-
-                            ${levelupMoves.length > 0 ? `
-                            <div class="modal-section">
-                                <div class="modal-section-title">Level-Up Moves</div>
-                                <div class="ability-list">
-                                    ${levelupMoves.map(move => `<span class="ability-tag move-tag">${move}</span>`).join('')}
-                                </div>
-                            </div>` : ''}
-
-                            <div class="modal-section">
-                                <div class="modal-section-title">Description</div>
-                                <div class="pokemon-flavor">${flavorText}</div>
-                            </div>
+                    </div>
+                    
+                    ${abilities.length > 0 ? `
+                    <div class="modal-section">
+                        <div class="modal-section-title">Abilities</div>
+                        <div class="ability-list">
+                            ${abilities.map(ability => `<span class="ability-tag">${ability}</span>`).join('')}
                         </div>
+                    </div>` : ''}
+
+                    ${levelupMoves.length > 0 ? `
+                    <div class="modal-section">
+                        <div class="modal-section-title">Level-Up Moves</div>
+                        <div class="ability-list">
+                            ${levelupMoves.map(move => `<span class="ability-tag move-tag">${move}</span>`).join('')}
+                        </div>
+                    </div>` : ''}
+
+                    <div class="modal-section">
+                        <div class="modal-section-title">Description</div>
+                        <div class="pokemon-flavor">${flavorText}</div>
                     </div>
                 `;
 
