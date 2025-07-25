@@ -12,6 +12,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Global variable for the compose command
+COMPOSE_CMD=""
+
 # Function to print colored output
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -61,37 +64,32 @@ check_prerequisites() {
         missing_deps+=("python3")
     fi
     
-    # Check Docker or Podman
-    local container_runtime=""
+    # Check for a container runtime and compose tool
     if command_exists docker; then
-        container_runtime="docker"
-        print_success "Docker found"
-    elif command_exists podman; then
-        container_runtime="podman"
-        print_success "Podman found"
-    else
-        missing_deps+=("docker or podman")
+        if command_exists docker-compose; then
+            COMPOSE_CMD="docker-compose"
+            print_success "Docker and docker-compose found"
+        elif docker compose version >/dev/null 2>&1; then
+            COMPOSE_CMD="docker compose"
+            print_success "Docker and docker-compose plugin found"
+        fi
     fi
-    
-    # Check Docker Compose or Podman Compose
-    if [[ "$container_runtime" == "docker" ]]; then
-        if command_exists docker-compose || docker compose version >/dev/null 2>&1; then
-            print_success "Docker Compose found"
-        else
-            missing_deps+=("docker-compose")
-        fi
-    elif [[ "$container_runtime" == "podman" ]]; then
+
+    if [[ -z "$COMPOSE_CMD" ]] && command_exists podman; then
         if command_exists podman-compose; then
-            print_success "Podman Compose found"
-        else
-            missing_deps+=("podman-compose")
+            COMPOSE_CMD="podman-compose"
+            print_success "Podman and podman-compose found"
         fi
+    fi
+
+    if [[ -z "$COMPOSE_CMD" ]]; then
+        missing_deps+=("docker/podman with a compose tool")
     fi
     
     # Report missing dependencies
     if [ ${#missing_deps[@]} -ne 0 ]; then
         print_error "Missing dependencies: ${missing_deps[*]}"
-        print_error "Please install the missing dependencies and run this script again."
+        print_error "Please install Docker with Docker Compose, or Podman with Podman Compose, and ensure they are in your PATH."
         exit 1
     fi
     
@@ -194,17 +192,7 @@ start_containers() {
         exit 1
     fi
     
-    # Try different compose commands
-    if command_exists docker-compose; then
-        docker-compose up -d
-    elif docker compose version >/dev/null 2>&1; then
-        docker compose up -d
-    elif command_exists podman-compose; then
-        podman-compose up -d
-    else
-        print_error "No suitable compose command found!"
-        exit 1
-    fi
+    $COMPOSE_CMD up -d
     
     if [ $? -eq 0 ]; then
         print_success "Containers started successfully!"
@@ -275,8 +263,8 @@ show_final_status() {
     echo ""
     print_status "Useful commands:"
     echo "  • View logs: tail -f pokemon_fetcher.log"
-    echo "  • Stop containers: docker-compose down (or podman-compose down)"
-    echo "  • Restart containers: docker-compose restart (or podman-compose restart)"
+    echo "  • Stop containers: $COMPOSE_CMD down"
+    echo "  • Restart containers: $COMPOSE_CMD restart"
     echo ""
     print_warning "Note: Make sure to activate the virtual environment before running the fetcher again:"
     local os=$(detect_os)
