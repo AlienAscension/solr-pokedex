@@ -1,0 +1,189 @@
+\section{Introduction}
+\lipsum[1]
+
+\subsection{Bold, Italic, Underlining}
+\textbf{Bold}, \textit{italic}, \underline{underline}, \textbf{\textit{\underline{nested}}}.
+
+\subsection{Figures}
+As in images or pictures within your document.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.4\linewidth]{ch01_osaka_dotonbori.jpg}
+    \caption{Dotonbori district, Osaka, Japan}
+    \label{fig:dotonbori}
+\end{figure}
+
+Figure \ref{fig:dotonbori} shows Dotonbori district in Osaka, Japan.
+
+\subsubsection{Multiple Figures}
+
+Here you see multiple figures side by side
+
+\begin{figure}[h!]
+  \centering
+  \begin{subfigure}[b]{0.4\linewidth}
+    \includegraphics[width=\linewidth]{ch01_osaka_dotonbori.jpg}
+    \caption{Dotonbori District.}
+    \label{fig:osaka-dotonbori-district}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.4\linewidth}
+    \includegraphics[width=\linewidth]{ch01_takoyaki.jpeg}
+    \caption{Takoyaki.}
+    \label{fig:fresh-takoyaki}
+  \end{subfigure}
+  \caption{two things you can find in Japan.}
+  \label{fig:twothingsinjpn}
+\end{figure}
+
+Osaka is a beautiful city with many delights (\ref{fig:twothingsinjpn}).
+Such as Dotonbori district shown in figure \ref{fig:osaka-dotonbori-district}, where you can get delicious Takoyaki seen in figure \ref{fig:fresh-takoyaki}.
+
+\subsection{Tables}
+
+\subsubsection{Aligned Table}
+
+\begin{table}[h!]
+  \begin{center}
+    \begin{tabular}{l|S|r} % <-- Changed to S here.
+      \textbf{Value 1} & \textbf{Value 2} & \textbf{Value 3}\\
+      $\alpha$ & $\beta$ & $\gamma$ \\
+      \hline
+      1 & 1110.1 & a\\
+      2 & 10.1 & b\\
+      3 & 23.113231 & c\\
+    \end{tabular}
+  \end{center}
+  \caption{Table with aligned units.}
+  \label{tab:table1}
+\end{table}
+
+This is an amazing table and you reference it like \ref{tab:table1}.
+
+\subsubsection{Table with lots of text}
+
+\begin{table}[htbp!]
+  \begin{center}
+    \begin{tabular}{|p{5cm}|p{5cm}|p{5cm}|}
+	  \hline
+	  \textbf{Column 1} & \textbf{Column 2} & \textbf{Column 3} \\
+	  \hline
+	  This is a longer sentence that will automatically wrap within the cell due to the p{5cm} column specification. & Another lengthy sentence that demonstrates how text wrapping works in LaTeX tables when the content is too long. & The third column also supports multiple lines of text that will wrap automatically. \\
+	  \hline
+	  Short text. & Medium length sentence here. & Another wrapped sentence that continues onto the next line automatically. \\
+	  \hline
+    \end{tabular}
+  \end{center}
+  \caption{Table with wrapped text}
+  \label{tab:wrapped}
+\end{table}
+
+\subsection{Lists}
+
+\subsubsection{Unordered List}
+\begin{itemize}
+    \item One
+    \item Two
+    \item Three
+\end{itemize}
+
+\subsubsection{Numbered List}
+
+\begin{enumerate}
+    \item One
+    \item Two
+    \item Three
+\end{enumerate}
+
+\subsection{Sourcecode}
+
+This is how you can show Code Snippets:
+% YOU MIGHT NEED THIS NEWLINE HERE
+
+\noindent
+\begin{minipage}{\linewidth}
+\lstinputlisting[language=Go, caption=Simple Go Program]{sourcecode/hello.go}
+\end{minipage}
+
+\subsection{Citations}
+We're using \textit{BibLaTeX}, which is mostly compatible with \textit{BibTeX}\cite{biblatex-bibtex-compatibility}.
+
+\subsubsection{Basic Citation Commands}
+
+\paragraph{Standard Numeric Citation:}
+Version control systems are essential for software development\cite{git}.
+\\
+
+\paragraph{Author as Part of Sentence:}
+\textcite{git} revolutionized distributed version control when he created Git in 2005.
+\\
+
+\paragraph{Parenthetical Citation:}
+Modern web frameworks have made Go development more accessible \parencite{gin-framework}.
+\\
+
+\paragraph{Author Only:}
+The design principles described by \citeauthor{golang-docs} emphasize simplicity and readability.
+\\
+
+\paragraph{Title Only:}
+For comprehensive documentation, see \citetitle{golang-docs}.
+\\
+
+\subsubsection{Advanced Citation Features}
+
+\paragraph{Multiple Citations:}
+Several tools and frameworks support modern development workflows\cite{git,golang-docs,gin-framework}.
+\\
+
+\paragraph{Page-Specific Citations:}
+The installation instructions are clearly documented\cite[S.~15]{golang-docs}.
+\\
+
+\paragraph{Citations with Prenotes and Postnotes:}
+For a detailed comparison of version control systems\cite[see][S.~42--45]{git}.
+\\
+
+\paragraph{Prenotes Only:}
+\cite[cf.][]{DUMMY:1}
+\\
+
+\paragraph{Range of Pages:}
+The framework architecture is explained in detail\cite[S.~10--25]{gin-framework}.
+\\
+
+\subsubsection{Different Entry Types Demonstration}
+
+\paragraph{Book Reference:}
+Classical programming concepts are covered in \textcite{DUMMY:1}.
+
+\paragraph{Journal Article:}
+Recent advances in the field are documented\cite{ARTICLE:1}.
+
+\paragraph{Website/Online Resource:}
+Corporate documentation can be found online\cite{WEBSITE:1}.
+
+\paragraph{Book Chapter:}
+Specific implementation details are covered\cite[Chapter~5]{BOOK:2}.
+
+\subsubsection{Bibliography Styles}
+Check the various entry types and their formatting in the \textit{references.bib} file. BibLaTeX automatically handles different source types (books, articles, websites, software) and formats them according to the chosen style (IEEE in this case).
+
+\subsection{Footnotes}
+I really like Yakitori\footnote{\label{fn:fishwarning}Contains fish.} fresh from the grill-thingy.
+Keep Footnote \ref{fn:fishwarning} in mind.
+Although referencing footnotes is questionable.
+Single word footnotes have no punctuation.
+
+\subsection{The Glossary \& Acronyms}
+Note that often times it can be helpful to start with a glossary-entry when first mentioning an acronym, \acrshort{eg} an \Gls{api-gls}.
+The \Gls{latex} typesetting markup language is specially suitable for documents that include \gls{maths}.
+\Glspl{formula} are rendered properly an easily once one gets used to the commands.
+
+\subsubsection{German Plural}
+Ein Computer ist ein sehr nützliches Gerät für die Arbeit mit \Glspl{datei}.
+
+\subsubsection{Acronyms}
+Given a set of numbers, there are elementary methods to compute its \acrlong{gcd}, which is abbreviated \acrshort{gcd}.
+This process is similar to that used for the \acrfull{lcm}.
+For fast prototyping it is recommended to first get \acrfullpl{mwe} going, before caring about the porcelain.

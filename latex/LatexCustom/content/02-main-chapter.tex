@@ -1,0 +1,78 @@
+\section{Datengrundlage und Datenakquise}
+\label{chap:daten}
+
+\subsection{Die Datenquelle: Pokémon-API (pokeAPI.co)}
+\label{sec:datenquelle}
+Beschreibung der API, ihrer Struktur und warum sie für das Projekt geeignet ist.
+
+\subsection{Analyse der Datenstruktur und relevanter Endpunkte}
+\label{sec:datenstruktur}
+Welche Endpunkte (z.B. /pokemon, /type) haben Sie genutzt? Wie sieht das JSON-Format aus?
+
+\subsection{Datenakquise und Vorverarbeitung mit \texttt{fetcher\_v2.py}}
+\label{sec:datenakquise}
+
+\subsection{Automatisierter Datenabruf via Python-Skript}
+Erläutern Sie die Funktionsweise des Skripts.
+
+\subsection{Datenbereinigung und Transformation für die Indexierung}
+Wie haben Sie die JSON-Daten aufbereitet, damit Solr sie verarbeiten kann? (z.B. Flachen von Strukturen, Auswahl relevanter Felder).
+
+\subsection{Technische Besonderheiten: Implementierung eines Rate-Limits}
+Erwähnen Sie, dass Sie die API-Richtlinien respektieren und wie Sie das technisch umgesetzt haben.
+
+
+\section{Systemarchitektur und Konzeption}
+\label{chap:architektur}
+
+\subsection{Überblick der containerisierten Gesamtarchitektur}
+\label{sec:gesamtarchitektur}
+Fügen Sie hier ein Diagramm ein, das das Zusammenspiel von Docker, Flask-App und Solr-Container zeigt. Beschreiben Sie die Architektur.
+
+\subsection{Entwurf des Solr-Indexschemas (\texttt{solr/configsets/})}
+\label{sec:solr_schema}
+
+\subsection{Definition zentraler Feldtypen}
+Welche Feldtypen (z.B. text\_de, string, pint) haben Sie definiert und warum?
+
+\subsection{Struktur des Index: Definierte Felder}
+Listen Sie die wichtigsten Felder Ihres Index auf (z.B. \texttt{name}, \texttt{primary\_type}, \texttt{all\_abilities}, etc.) und beschreiben Sie deren Zweck.
+
+\subsection{Nutzung von \texttt{copyField} für eine übergreifende Keywordsuche}
+Erklären Sie, wie \texttt{copyField} funktioniert und warum Sie es für die einfache Suche eingesetzt haben.
+
+
+\section{Implementierung der Kernkomponenten}
+\label{chap:implementierung}
+
+\subsection{Indexierungspipeline}
+\label{sec:impl_indexing}
+Beschreiben Sie den Prozess vom Start des Fetchers bis zum fertigen Dokument in Solr.
+
+\subsection{Entwicklung der Webanwendung mit Flask (\texttt{web/web\_app.py})}
+\label{sec:impl_flask}
+Erläutern Sie die Struktur der Flask-App: Backend-Routen und Frontend-Templates. Fügen Sie hier Screenshots der UI ein.
+
+\subsection{Implementierung der Suchfunktionalitäten}
+\label{sec:impl_suche}
+Gehen Sie auf die einzelnen Suchtypen ein, wie sie in der README beschrieben sind (Keyword, Phrase, Facetten, etc.) und wie Sie diese mit Solr-Anfragen umgesetzt haben.
+
+\subsection{Automatisierung des Setups (\texttt{install.sh})}
+\label{sec:impl_install_script}
+Erklären Sie kurz den Zweck und die Funktionsweise des Installationsskripts.
+
+
+\section{Evaluation und Optimierung}
+\label{chap:evaluation}
+
+\subsection{Funktionale Tests der implementierten Suchanfragetypen}
+\label{sec:eval_tests}
+Wie haben Sie sichergestellt, dass die Suche wie erwartet funktioniert? Zeigen Sie Beispiele.
+
+\subsection{Bewertung und Optimierung des Relevanzrankings}
+\label{sec:eval_relevanz}
+Haben Sie das Ranking angepasst (z.B. durch Boosting von Feldern)? Diskutieren Sie die Ergebnisse.
+
+\subsection{Diskussion der optionalen Features}
+\label{sec:eval_optional}
+Falls implementiert, beschreiben Sie hier Highlighting und Autocompletion. Falls nicht, erwähnen Sie, warum nicht und dass es Teil des Ausblicks ist.
