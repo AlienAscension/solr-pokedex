@@ -74,105 +74,108 @@ class PokemonFetcher:
 
     # <<< Fetcher V2 Changes >>>
     def setup_solr_schema(self) -> bool:
-            """
-            Makes sure the Solr schema has all needed fields, optimizing for search performance
-            by only indexing fields relevant for searching.
+        """
+        Makes sure the Solr schema has all needed fields, and that these fields have
+        "docValues" turned on — which is needed for sorting, faceting, and using functions.
 
-            - `indexed=True`: For fields users will perform free-text searches on (e.g., name, flavor_text).
-            - `docValues=True`: For fields used in sorting, faceting, or range queries (e.g., stats, height, type).
-            - `stored=True`: The default, so the field's value can be retrieved and displayed in results.
+        This function can be safely run multiple times. It first tries to update the fields
+        (in case they already exist but don't have docValues), and if a field is missing,
+        it will try to add it.
 
-            Returns:
-                True if the schema was set up correctly, False if there was a problem.
-            """
-            logger.info("Verifying and updating Solr schema with optimized indexing...")
+        Returns:
+            True if the schema was set up correctly, False if there was a problem.
+        """
+        logger.info("Verifying and updating Solr schema for sorting and faceting...")
 
-            fields_to_configure = [
-                # --- Core & Searchable Fields ---
-                {'name': 'id', 'type': 'string', 'required': True, 'indexed': True}, # Must be indexed and is the unique key
-                {'name': 'name', 'type': 'text_en', 'docValues': True, 'indexed': True}, # Primary search field
-                {'name': 'flavor_text', 'type': 'text_en', 'indexed': True}, # Rich content for full-text search
-                {'name': 'types', 'type': 'strings', 'indexed': True, 'docValues': True}, # Searchable & for faceting
-                {'name': 'primary_type', 'type': 'string', 'docValues': True, 'indexed': True}, # Searchable & for faceting
-                {'name': 'secondary_type', 'type': 'string', 'docValues': True, 'indexed': True}, # Searchable & for faceting
-                {'name': 'all_abilities', 'type': 'strings', 'indexed': True}, # Search for Pokémon by ability
-                {'name': 'levelup_moves', 'type': 'strings', 'multiValued': True, 'indexed': True}, # Search by move
-                {'name': 'color', 'type': 'string', 'docValues': True, 'indexed': True}, # Searchable & for faceting
-                {'name': 'habitat', 'type': 'string', 'docValues': True, 'indexed': True}, # Searchable & for faceting
-                {'name': 'evolves_from', 'type': 'string', 'docValues': True, 'indexed': True}, # Searchable
-
-                # --- Fields for Sorting, Filtering, and Display ONLY (not for free-text search) ---
-                # Note: docValues is the key property here, not 'indexed'.
-                {'name': 'pokemon_id', 'type': 'pint', 'docValues': True},
-                {'name': 'height', 'type': 'pint', 'docValues': True},
-                {'name': 'weight', 'type': 'pint', 'docValues': True},
-                {'name': 'base_experience', 'type': 'pint', 'docValues': True},
-                {'name': 'total_stats', 'type': 'pint', 'docValues': True},
-                {'name': 'generation', 'type': 'pint', 'docValues': True},
-                {'name': 'capture_rate', 'type': 'pint', 'docValues': True},
-                {'name': 'is_legendary', 'type': 'boolean', 'docValues': True},
-                {'name': 'is_mythical', 'type': 'boolean', 'docValues': True},
-                {'name': 'stat_hp', 'type': 'pint', 'docValues': True},
-                {'name': 'stat_attack', 'type': 'pint', 'docValues': True},
-                {'name': 'stat_defense', 'type': 'pint', 'docValues': True},
-                {'name': 'stat_special_attack', 'type': 'pint', 'docValues': True},
-                {'name': 'stat_special_defense', 'type': 'pint', 'docValues': True},
-                {'name': 'stat_speed', 'type': 'pint', 'docValues': True},
-
-                # --- Fields for Display Only (not searched, sorted, or filtered on) ---
-                {'name': 'abilities', 'type': 'strings'},
-                {'name': 'hidden_abilities', 'type': 'strings'},
-            ]
+        fields_to_configure = [
+            # Field that caused the original error
+            {'name': 'pokemon_id', 'type': 'pint', 'multiValued': False, 'docValues': True},
             
-            headers = {'Content-type': 'application/json'}
-            all_successful = True
+            # Other fields good for sorting/faceting
+            {'name': 'name', 'type': 'string', 'docValues': True},
+            {'name': 'height', 'type': 'pint', 'docValues': True},
+            {'name': 'weight', 'type': 'pint', 'docValues': True},
+            {'name': 'base_experience', 'type': 'pint', 'docValues': True},
+            {'name': 'primary_type', 'type': 'string', 'docValues': True},
+            {'name': 'total_stats', 'type': 'pint', 'docValues': True},
+            {'name': 'generation', 'type': 'pint', 'docValues': True},
+            {'name': 'color', 'type': 'string', 'docValues': True},
+            {'name': 'habitat', 'type': 'string', 'docValues': True},
+            {'name': 'capture_rate', 'type': 'pint', 'docValues': True},
+            {'name': 'is_legendary', 'type': 'boolean', 'docValues': True},
+            {'name': 'is_mythical', 'type': 'boolean', 'docValues': True},
+            
+            # All individual stats
+            {'name': 'stat_hp', 'type': 'pint', 'docValues': True},
+            {'name': 'stat_attack', 'type': 'pint', 'docValues': True},
+            {'name': 'stat_defense', 'type': 'pint', 'docValues': True},
+            {'name': 'stat_special_attack', 'type': 'pint', 'docValues': True},
+            {'name': 'stat_special_defense', 'type': 'pint', 'docValues': True},
+            {'name': 'stat_speed', 'type': 'pint', 'docValues': True},
 
-            for field_definition in fields_to_configure:
-                # We assume a field is stored so we can see its value in results.
-                field_definition.setdefault('stored', True)
-                # CRITICAL CHANGE: We now assume a field is NOT indexed unless explicitly told.
-                # This prevents bloating the index with fields only used for sorting/filtering.
-                field_definition.setdefault('indexed', False)
+            # Add definitions for other fields created by the script
+            {'name': 'id', 'type': 'string', 'required': True}, # 'id' is special
+            {'name': 'flavor_text', 'type': 'text_en'},
+            {'name': 'types', 'type': 'strings'},
+            {'name': 'secondary_type', 'type': 'string'},
+            {'name': 'abilities', 'type': 'strings'},
+            {'name': 'hidden_abilities', 'type': 'strings'},
+            {'name': 'all_abilities', 'type': 'strings'},
+            {'name': 'evolves_from', 'type': 'string'},
 
-                try:
-                    # First, try to replace the field. This works if the field already exists.
-                    replace_payload = json.dumps({'replace-field': field_definition})
-                    response = self.session.post(self.schema_url, data=replace_payload, headers=headers, timeout=10)
-                    response.raise_for_status()
-                    logger.info(f"Successfully configured existing field '{field_definition['name']}'.")
+            {'name': 'levelup_moves', 'type': 'strings', 'multiValued': True},
+        ]
+        
+        headers = {'Content-type': 'application/json'}
+        all_successful = True
 
-                except requests.exceptions.RequestException as e:
-                    is_field_not_found_error = (
-                        e.response is not None and
-                        e.response.status_code == 400 and
-                        "not present in this schema" in e.response.text
-                    )
+        for field_definition in fields_to_configure:
+            # We must also specify if the field is indexed or stored, otherwise the defaults might be wrong.
+            field_definition.setdefault('indexed', True)
+            field_definition.setdefault('stored', True)
 
-                    if is_field_not_found_error:
-                        # Field doesn't exist, so let's add it.
-                        logger.warning(f"Field '{field_definition['name']}' not found. Attempting to add it.")
-                        try:
-                            add_payload = json.dumps({'add-field': field_definition})
-                            add_response = self.session.post(self.schema_url, data=add_payload, headers=headers, timeout=10)
-                            add_response.raise_for_status()
-                            logger.info(f"Successfully ADDED new field '{field_definition['name']}'.")
-                        except requests.exceptions.RequestException as add_e:
-                            logger.error(f"Failed to ADD field '{field_definition['name']}'. Error: {add_e}")
-                            if add_e.response is not None:
-                                logger.error(f"Solr Response: {add_e.response.text}")
-                            all_successful = False
-                    else:
-                        logger.error(f"Failed to configure field '{field_definition['name']}'. Unhandled Error: {e}")
-                        if e.response is not None:
-                            logger.error(f"Solr Response: {e.response.text}")
+            try:
+                # First, try to replace the field. This works if the field already exists.
+                replace_payload = json.dumps({'replace-field': field_definition})
+                response = self.session.post(self.schema_url, data=replace_payload, headers=headers, timeout=10)
+                response.raise_for_status()
+                logger.info(f"Successfully configured existing field '{field_definition['name']}'.")
+
+            except requests.exceptions.RequestException as e:
+                # Check if the exception is the specific "field not present" error.
+                is_field_not_found_error = (
+                    e.response is not None and
+                    e.response.status_code == 400 and
+                    "not present in this schema" in e.response.text
+                )
+
+                if is_field_not_found_error:
+                    # This is expected on a fresh core. Let's add the field instead.
+                    logger.warning(f"Field '{field_definition['name']}' not found. Attempting to add it.")
+                    try:
+                        add_payload = json.dumps({'add-field': field_definition})
+                        add_response = self.session.post(self.schema_url, data=add_payload, headers=headers, timeout=10)
+                        add_response.raise_for_status()
+                        logger.info(f"Successfully ADDED new field '{field_definition['name']}'.")
+                    except requests.exceptions.RequestException as add_e:
+                        # If adding the field *also* fails, that's a more serious problem.
+                        logger.error(f"Failed to ADD field '{field_definition['name']}'. Error: {add_e}")
+                        if add_e.response is not None:
+                            logger.error(f"Solr Response: {add_e.response.text}")
                         all_successful = False
+                else:
+                    # The error was something else, so it's a real failure.
+                    logger.error(f"Failed to configure field '{field_definition['name']}'. Unhandled Error: {e}")
+                    if e.response is not None:
+                        logger.error(f"Solr Response: {e.response.text}")
+                    all_successful = False
 
-            if all_successful:
-                logger.info("Schema verification and configuration complete.")
-            else:
-                logger.error("One or more schema configuration steps failed. Check logs.")
+        if all_successful:
+            logger.info("Schema verification and configuration complete.")
+        else:
+            logger.error("One or more schema configuration steps failed. Check logs.")
 
-            return all_successful
+        return all_successful
 
     def clean_text(self, text: str) -> str:
         """
