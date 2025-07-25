@@ -52,6 +52,7 @@ check_prerequisites() {
     print_status "Checking prerequisites..."
     
     local missing_deps=()
+    local container_runtime_found=false
     
     # Check Python 3
     if command_exists python3; then
@@ -61,33 +62,30 @@ check_prerequisites() {
         missing_deps+=("python3")
     fi
     
-    # Check Docker or Podman
-    local container_runtime=""
+    # --- START OF IMPROVED LOGIC ---
+
+    # Try to find a working Docker + Docker Compose combination
     if command_exists docker; then
-        container_runtime="docker"
-        print_success "Docker found"
-    elif command_exists podman; then
-        container_runtime="podman"
-        print_success "Podman found"
-    else
-        missing_deps+=("docker or podman")
-    fi
-    
-    # Check Docker Compose or Podman Compose
-    if [[ "$container_runtime" == "docker" ]]; then
         if command_exists docker-compose || docker compose version >/dev/null 2>&1; then
-            print_success "Docker Compose found"
-        else
-            missing_deps+=("docker-compose")
-        fi
-    elif [[ "$container_runtime" == "podman" ]]; then
-        if command_exists podman-compose; then
-            print_success "Podman Compose found"
-        else
-            missing_deps+=("podman-compose")
+            print_success "Found working environment: Docker + Docker Compose"
+            container_runtime_found=true
         fi
     fi
+
+    # If Docker+Compose not found, try Podman + Podman Compose
+    if ! $container_runtime_found && command_exists podman; then
+        if command_exists podman-compose; then
+            print_success "Found working environment: Podman + Podman Compose"
+            container_runtime_found=true
+        fi
+    fi
+
+    if ! $container_runtime_found; then
+         missing_deps+=("a working container environment (Docker with docker-compose, or Podman with podman-compose)")
+    fi
     
+    # --- END OF IMPROVED LOGIC ---
+
     # Report missing dependencies
     if [ ${#missing_deps[@]} -ne 0 ]; then
         print_error "Missing dependencies: ${missing_deps[*]}"

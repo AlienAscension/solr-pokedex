@@ -67,9 +67,9 @@ class PokemonFetcher:
         
         # Generation limits (first 3 generations)
         self.gen_limits = {
-            1: (1, 151),    # Gen I: Bulbasaur to Mew
-            2: (152, 251),  # Gen II: Chikorita to Celebi  
-            3: (252, 386)   # Gen III: Treecko to Deoxys
+            1: (1, 11),    # Gen I: Bulbasaur to Mew
+            2: (152, 162),  # Gen II: Chikorita to Celebi  
+            3: (252, 262)   # Gen III: Treecko to Deoxys
         }
 
     # <<< Fetcher V2 Changes >>>
