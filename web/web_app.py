@@ -99,19 +99,33 @@ class PokemonSearchApp:
                 query, generation, pokemon_type, ability, is_legendary
             )
             
-            # Build sort parameter
+            """            """            # Build sort parameter
             sort_param = f"{sort_field} {sort_order}"
             
             # Execute search
-            results = self.solr.search(
-                solr_query,
-                start=start,
-                rows=rows,
-                sort=sort_param,
-                facet='true',
-                facet_field=['generation', 'primary_type', 'color', 'habitat'],
-                facet_mincount=1
-            )
+            params = {
+                'q': solr_query,
+                'start': start,
+                'rows': rows,
+                'sort': sort_param,
+                'facet': 'true',
+                'facet.field': ['generation', 'primary_type', 'color', 'habitat'],
+                'facet.mincount': 1,
+                'spellcheck': 'true',
+                'spellcheck.collate': 'true',
+            }
+            results = self.solr.search(**params)
+
+            # Extract spellcheck suggestions
+            suggestions = []
+            collated_suggestion = None
+            if results.spellcheck and results.spellcheck.get('suggestions'):
+                for term, suggestion_info in results.spellcheck['suggestions'].items():
+                    if suggestion_info.get('suggestion'):
+                        suggestions.extend([s['word'] for s in suggestion_info['suggestion']])
+                if results.spellcheck.get('collations'):
+                    collated_suggestion = results.spellcheck['collations'][1] if len(results.spellcheck['collations']) > 1 else None
+
             
             # Format response
             response = {
@@ -122,6 +136,10 @@ class PokemonSearchApp:
                 'results': [dict(doc) for doc in results.docs],
                 'facets': self.format_facets(results.facets) if hasattr(results, 'facets') else {},
                 'query': query,
+                'spellcheck': {
+                    'suggestions': suggestions,
+                    'collated': collated_suggestion,
+                },
                 'filters': {
                     'generation': generation,
                     'type': pokemon_type,
