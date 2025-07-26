@@ -1,3 +1,4 @@
 # Pokeapi Fetcher Log
 *.log
+__pycache__
 
