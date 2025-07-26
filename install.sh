@@ -164,21 +164,21 @@ install_dependencies() {
     fi
 }
 
-# Function to make fetcher script executable
-make_fetcher_executable() {
-    print_status "Making fetcher script executable..."
+# Function to make main script executable
+make_main_executable() {
+    print_status "Making main script executable..."
     
-    if [ ! -f "fetcher_v2.py" ]; then
-        print_error "fetcher_v2.py not found in current directory!"
+    if [ ! -f "main.py" ]; then
+        print_error "main.py not found in current directory!"
         exit 1
     fi
     
-    chmod +x fetcher_v2.py
+    chmod +x main.py
     
     if [ $? -eq 0 ]; then
-        print_success "fetcher_v2.py is now executable!"
+        print_success "main.py is now executable!"
     else
-        print_error "Failed to make fetcher_v2.py executable!"
+        print_error "Failed to make main.py executable!"
         exit 1
     fi
 }
@@ -234,8 +234,8 @@ wait_for_solr() {
     return 1
 }
 
-# Function to run the fetcher
-run_fetcher() {
+# Function to run the main script
+run_main_script() {
     print_status "Running Pokémon data fetcher..."
     
     # Activate virtual environment first
@@ -250,7 +250,7 @@ run_fetcher() {
     
     source "$activate_script"
     
-    ./fetcher_v2.py
+    python3 main.py
     
     if [ $? -eq 0 ]; then
         print_success "Pokémon data fetched and indexed successfully!"
@@ -292,25 +292,25 @@ main() {
     echo ""
     
     # Check if we're in the right directory
-    if [ ! -f "fetcher_v2.py" ] || [ ! -f "docker-compose.yml" ]; then
+    if [ ! -f "main.py" ] || [ ! -f "docker-compose.yml" ]; then
         print_error "This script must be run from the solr-pokedex project root directory!"
-        print_error "Make sure you can see fetcher_v2.py and docker-compose.yml in the current directory."
+        print_error "Make sure you can see main.py and docker-compose.yml in the current directory."
         exit 1
     fi
     
     check_prerequisites
     create_virtual_environment
     install_dependencies
-    make_fetcher_executable
+    make_main_executable
     start_containers
     
     if wait_for_solr; then
-        run_fetcher
+        run_main_script
         show_final_status
     else
         print_error "Installation failed due to Solr startup issues."
         print_warning "You can try running the fetcher manually once Solr is ready:"
-        print_warning "  source venv/bin/activate && ./fetcher_v2.py"
+        print_warning "  source venv/bin/activate && ./05_main.py"
     fi
 }
 
