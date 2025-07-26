@@ -111,18 +111,37 @@ class PokemonSearchApp:
             # Build sort parameter
             sort_param = f"{sort_field} {sort_order}"
             
-            # Execute main search
-            params = {
-                'q': query, # Use the raw query for the main search
-                'start': start,
-                'rows': rows,
-                'sort': sort_param,
-                'facet': 'true',
-                'facet.field': ['generation', 'primary_type', 'color', 'habitat'],
-                'facet.mincount': 1,
-                'defType': 'edismax',
-                'qf': 'name^5 types^2 all_abilities^2 flavor_text^1 spellcheck_base^1',
-            }
+            # Execute main search with enhanced substring matching
+            # If it's a simple term search, try wildcard matching first
+            if query and query != '*:*' and ' ' not in query and len(query) > 2:
+                # Try wildcard search for partial matches
+                wildcard_query = f'name:*{query}* OR name:*{query.capitalize()}*'
+                params = {
+                    'q': wildcard_query,
+                    'start': start,
+                    'rows': rows,
+                    'sort': sort_param,
+                    'facet': 'true',
+                    'facet.field': ['generation', 'primary_type', 'color', 'habitat'],
+                    'facet.mincount': 1,
+                }
+            else:
+                # Use edismax for complex queries
+                params = {
+                    'q': query,
+                    'start': start,
+                    'rows': rows,
+                    'sort': sort_param,
+                    'facet': 'true',
+                    'facet.field': ['generation', 'primary_type', 'color', 'habitat'],
+                    'facet.mincount': 1,
+                    'defType': 'edismax',
+                    'qf': 'name^5 types^2 all_abilities^2 flavor_text^1',
+                    'mm': '1',
+                    'qs': '2',
+                    'ps': '2', 
+                    'tie': '0.1',
+                }
             
             if filters:
                 params['fq'] = filters # Add filters to the fq parameter
@@ -364,9 +383,9 @@ class PokemonSearchApp:
             try:
                 terms_params = {
                     'terms': 'true',
-                    'terms.fl': 'name,types,all_abilities',
+                    'terms.fl': 'name,name_spell,types,all_abilities',
                     'terms.prefix': query.lower(),
-                    'terms.limit': 10,
+                    'terms.limit': 15,
                     'wt': 'json'
                 }
                 
@@ -374,37 +393,33 @@ class PokemonSearchApp:
                 terms_response.raise_for_status()
                 terms_data = terms_response.json()
                 
+                logger.info(f"Terms component returned: {len(terms_data.get('terms', {}))} fields")
+                
                 if terms_data.get('terms'):
                     for field, terms_list in terms_data['terms'].items():
                         if isinstance(terms_list, list):
                             # Terms come as [term1, count1, term2, count2, ...]
+                            field_suggestions = 0
                             for i in range(0, len(terms_list), 2):
                                 if i < len(terms_list):
                                     term = terms_list[i]
                                     # Case-insensitive matching for terms
                                     if term.lower().startswith(query.lower()) and term not in suggestions:
                                         suggestions.append(term)
+                                        field_suggestions += 1
+                            logger.info(f"Field '{field}' contributed {field_suggestions} suggestions")
                                         
             except requests.exceptions.RequestException as e:
                 logger.warning(f"Terms request failed: {e}")
             
-            # Get Pokemon name suggestions using case-insensitive wildcard search
+            # Get Pokemon name suggestions using simple wildcard matching
             try:
-                # Create multiple variations of the query to catch different cases
-                query_variations = [
-                    query.lower(),
-                    query.capitalize(), 
-                    query.upper(),
-                    query  # original case
-                ]
-                
-                # Build a query that searches for any of these variations
-                name_queries = [f'name:{var}*' for var in set(query_variations)]
-                combined_query = ' OR '.join(name_queries)
+                # Use the same successful wildcard approach as main search
+                wildcard_query = f'name:*{query}* OR name:*{query.capitalize()}*'
                 
                 name_params = {
-                    'q': combined_query,
-                    'rows': 15,
+                    'q': wildcard_query,
+                    'rows': 15,  # Limit for autocomplete
                     'fl': 'name',
                     'wt': 'json'
                 }
@@ -413,12 +428,26 @@ class PokemonSearchApp:
                 name_response.raise_for_status()
                 name_data = name_response.json()
                 
+                logger.info(f"Autocomplete wildcard search returned {name_data.get('response', {}).get('numFound', 0)} results")
+                
                 if name_data.get('response', {}).get('docs'):
+                    # Separate prefix matches and substring matches for better ordering
+                    prefix_matches = []
+                    substring_matches = []
+                    
                     for doc in name_data['response']['docs']:
                         name = doc.get('name', '')
-                        # Filter to only include names that actually start with our query (case-insensitive)
-                        if name and name.lower().startswith(query.lower()) and name not in suggestions:
-                            suggestions.append(name)
+                        if name and query.lower() in name.lower() and name not in suggestions:
+                            if name.lower().startswith(query.lower()):
+                                prefix_matches.append(name)
+                            else:
+                                substring_matches.append(name)
+                    
+                    # Add prefix matches first (higher priority), then substring matches
+                    suggestions.extend(prefix_matches)
+                    suggestions.extend(substring_matches)
+                    
+                    logger.info(f"Added {len(prefix_matches)} prefix matches and {len(substring_matches)} substring matches")
                             
             except requests.exceptions.RequestException as e:
                 logger.warning(f"Name search failed: {e}")

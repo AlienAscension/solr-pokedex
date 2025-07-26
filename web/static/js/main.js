@@ -164,16 +164,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const suggestionItem = document.createElement('div');
                 suggestionItem.className = 'autocomplete-item';
                 
-                // Highlight the matching part (case-insensitive)
+                // Highlight the matching part anywhere in the suggestion (case-insensitive)
                 const queryLower = searchQuery.value.toLowerCase();
                 const suggestionLower = suggestion.toLowerCase();
                 const matchIndex = suggestionLower.indexOf(queryLower);
                 
-                if (matchIndex === 0) {
-                    // Highlight the beginning of the suggestion that matches
-                    const matchedPart = suggestion.substring(0, queryLower.length);
-                    const remainingPart = suggestion.substring(queryLower.length);
-                    suggestionItem.innerHTML = `<strong>${matchedPart}</strong>${remainingPart}`;
+                if (matchIndex >= 0) {
+                    // Highlight the matching part wherever it appears
+                    const beforeMatch = suggestion.substring(0, matchIndex);
+                    const matchedPart = suggestion.substring(matchIndex, matchIndex + queryLower.length);
+                    const afterMatch = suggestion.substring(matchIndex + queryLower.length);
+                    suggestionItem.innerHTML = `${beforeMatch}<strong>${matchedPart}</strong>${afterMatch}`;
                 } else {
                     suggestionItem.textContent = suggestion;
                 }
