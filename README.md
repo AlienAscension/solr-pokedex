@@ -11,6 +11,7 @@ solr-pokedex/
 ├── solr_indexer.py            # Solr indexing and schema management
 ├── config.py                  # Configuration and logging setup
 ├── install.sh                 # Automated setup script
+├── test.py                    # Comprehensive test suite
 ├── LICENSE                    # Project license
 ├── README.md                  # This file
 ├── requirements.txt           # Python dependencies
@@ -166,6 +167,37 @@ You can combine multiple queries using boolean operators `AND`, `OR`, and `NOT`.
 - Find Generation 1 Pokémon that are also Legendary: `generation:1 AND is_legendary:true`
 - Find Generation 1 Ghost type Pokémon or Generation 2 Fairy type Pokémon: `(generation:1 AND primary_type:ghost) OR (generation:1 AND primary_type:fairy)`
 
+## Testing
+The project includes a comprehensive test suite (`test.py`) for evaluating the search engine's functionality, performance, and the relevance of its search results.
+
+### Running the Tests
+To run the test suite, execute the following command from the project root directory:
+```bash
+python3 test.py
+```
+You can also specify the URL of the running web application and an output file for the results:
+```bash
+python3 test.py --url http://localhost:5000 --output results.json
+```
+
+### Test Coverage
+The test suite evaluates various search scenarios, including:
+- **Exact and partial name searches**
+- **Type and ability-based searches**
+- **Autocomplete and spellcheck suggestions**
+- **Filter combinations and edge cases**
+- **Ranking quality and performance**
+
+### Information Retrieval Metrics
+To ensure search relevance, the test suite calculates and reports on key Information Retrieval (IR) metrics:
+- **Precision, Recall, and F-Measure**: Overall effectiveness of the search.
+- **Top-K Analysis (P@k, R@k)**: Precision and recall within the top K results.
+- **Mean Reciprocal Rank (MRR)**: How high the first relevant result is ranked.
+- **Normalized Discounted Cumulative Gain (NDCG)**: The quality of the ranking, rewarding higher placement for more relevant items.
+- **Average Precision (AP)**: A summary measure of ranking quality.
+
+The script uses a predefined "ground truth" set to compare search results against expected outcomes, allowing for robust and objective evaluation of the search engine's quality.
+
 ## Features
 - **Enhanced Search Interface**: Web-based search for Pokémon with intelligent autocomplete
 - **Real-time Autocomplete**: Instant suggestions as you type, supporting substring matching anywhere in Pokémon names
@@ -173,6 +205,7 @@ You can combine multiple queries using boolean operators `AND`, `OR`, and `NOT`.
 - **Solr Integration**: Fast, scalable search using Apache Solr
 - **Data Fetching**: Automated script to populate the search index. Fetcher is rate limited to 100ms, to respect the usage guidelines of https://pokeapi.co/
 - **Containerized**: Easy deployment with Docker/Podman
+- **Comprehensive Testing**: Includes a test suite with IR metrics for quality assurance.
 
 ## Development
 ### Project Components
@@ -182,6 +215,7 @@ You can combine multiple queries using boolean operators `AND`, `OR`, and `NOT`.
 - **`data_processor.py`**: Processes and transforms Pokemon data for indexing
 - **`solr_indexer.py`**: Manages Solr schema setup and document indexing
 - **`config.py`**: Configuration settings and logging setup
+- **`test.py`**: Comprehensive test suite with performance and IR metric evaluation.
 - **`web/web_app.py`**: Flask web application providing the search interface with autocomplete
 - **`web/static/`**: Frontend assets (CSS, JavaScript) for the search interface
 - **`solr/configsets/`**: Solr schema and configuration files
@@ -199,3 +233,4 @@ Check `pokemon_fetcher.log` for data fetching logs and debugging information.
 
 ## License
 This project is licensed under the terms specified in the LICENSE file.
+
