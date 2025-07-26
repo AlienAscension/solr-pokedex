@@ -210,18 +210,4 @@ Das Hauptskript fungiert als zentrale Koordinationsstelle für den gesamten Date
 
 Den Abschluss bilden Index-Optimierung und die Erstellung des Spellcheck-Dictionary, wodurch das System für optimale Suchperformance konfiguriert wird.
 
-\section{Evaluation und Optimierung}
 
-\subsection{Funktionale Tests der implementierten Suchanfragetypen}
-
-Die Validierung der Suchfunktionalitäten erfolgte durch systematische Tests verschiedener Anfrageszenarien. Dabei wurden sowohl einfache Keyword-Suchen als auch komplexe Filter-Kombinationen und Edge-Cases wie leere Suchanfragen und ungültige Parameter geprüft.
-
-\subsection{Bewertung und Optimierung des Relevanzrankings}
-
-Das Relevanzranking wurde durch Field-Boosting optimiert, wobei verschiedene Gewichtungsfaktoren für unterschiedliche Felder getestet wurden. Die finale Konfiguration priorisiert Namensübereinstimmungen stark, berücksichtigt aber auch Typen und Fähigkeiten für umfassende Suchergebnisse.
-
-\subsection{Diskussion der optionalen Features}
-
-Die implementierten Features wie Highlighting und Autocompletion erweitern die Benutzerfreundlichkeit. Das Highlighting hebt Suchbegriffe in den Ergebnissen hervor, während die Autocomplete-Funktionalität durch Echtzeit-Vorschläge die Sucheffizienz verbessert.
-
-Die Detailansicht einzelner Pokemon wird in einer Modal-Darstellung präsentiert, wie in Abbildung~\ref{fig:pokemon_modal} gezeigt. Diese Ansicht bietet umfassende Informationen zu einem Pokemon, einschließlich aller Statistiken, Fähigkeiten, Typen und Beschreibungstexte, ohne die Hauptsuchseite zu verlassen.

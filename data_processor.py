@@ -143,6 +143,21 @@ class DataProcessor:
                 generation = 2
             elif 252 <= pokemon_id <= 386:
                 generation = 3
+            elif 387 <= pokemon_id <= 493:
+                generation = 4
+            elif 494 <= pokemon_id <= 649:
+                generation = 5
+            elif 650 <= pokemon_id <= 721:
+                generation = 6
+            elif 722 <= pokemon_id <= 809:
+                generation = 7
+            elif 810 <= pokemon_id <= 905:
+                generation = 8
+            elif 906 <= pokemon_id <= 1025:
+                generation = 9
+            else:
+                generation = None  # optional fallback, falls neue IDs auftauchen
+
             doc['generation'] = generation
             
             # Flavor texts for full-text search
