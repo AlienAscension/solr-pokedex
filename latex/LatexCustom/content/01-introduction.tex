@@ -34,19 +34,32 @@ Die Interaktion mit der Suchmaschine erfolgt über eine mit Flask entwickelte We
 Die Architektur des „Solr Pokédex“ basiert auf einer Auswahl bewährter Open-Source-Technologien, die gezielt für ihre jeweilige Aufgabe im Projekt eingesetzt wurden. Der Stack lässt sich in die Bereiche Backend, Frontend, Datenquelle und Deployment unterteilen. Die prozentuale Verteilung der Programmiersprachen im Projekt (siehe Abbildung \ref{fig:language-distribution}) spiegelt diese Aufteilung wider.
 
 \begin{figure}[h!]
-    \centering
-    \begin{tikzpicture}
-    \pie[text=legend, radius=3]{
-    45.5/Python,
-    17.4/JavaScript,
-    15.4/CSS,
-    12.8/Shell,
-    8.0/HTML,
-    0.9/Dockerfile
-    }
-    \end{tikzpicture}
-    \caption{Sprachverteilung im Codebestand}
-    \label{fig:language-distribution}
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    xbar,
+    width=12cm,
+    height=6cm,
+    xlabel={Anteil (\%)},
+    symbolic y coords={Dockerfile,HTML,Shell,CSS,JavaScript,Python},
+    ytick=data,
+    nodes near coords,
+    nodes near coords align={horizontal},
+    xmin=0,
+    xmax=50
+]
+\addplot coordinates {
+    (0.9,Dockerfile)
+    (8.0,HTML)
+    (12.8,Shell)
+    (15.4,CSS)
+    (17.4,JavaScript)
+    (45.5,Python)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Sprachverteilung im Codebestand}
+\label{fig:language-distribution}
 \end{figure}
 
 
@@ -57,9 +70,14 @@ Das Herzstück der Anwendung bildet das Backend, das primär in \textbf{Python} 
     
     \item \textbf{Flask}: Das leichtgewichtige Web-Framework Flask dient als Brücke zwischen dem Frontend und dem Solr-Server. Im Rahmen der Lehrveranstaltung wurde eine einfache Basisanwendung auf Grundlage von Flask bereitgestellt, welche ich für meine Anwendung entsprechend angepasst und erweitert habe. Die Datei \texttt{web/web\_app.py} verarbeitet die HTTP-Anfragen der Benutzeroberfläche, konstruiert die entsprechenden Solr-Queries und gibt die Ergebnisse als gerenderte HTML-Seite zurück.
     
-    \item \textbf{Datenakquise:} 
-    Das Skript \texttt{fetcher\_v2.py} ist die zentrale Komponente zur Befüllung der Suchmaschine und übernimmt die Konfiguration des Solr-Schemas, den Abruf der Daten von der PokeAPI, deren Verarbeitung sowie die finale Indexierung. Es ist so aufgebaut, dass es auch auf einem frischen Solr-Core ohne manuelle Vorbereitung funktioniert. Die Daten werden bereinigt, angereichert und in eine für Solr geeignete Struktur überführt. Ein Batching-Mechanismus und eine detaillierte Protokollierung sorgen für Effizienz und Transparenz im Indexierungsprozess. Eine ausführlichere Beschreibung folgt in einem späteren Kapitel.
+    \item \textbf{Datenakquise:}
 \end{itemize}
+Zu Beginn entwickelte ich ein einzelnes, umfassendes Skript namens \texttt{fetcher\_v2.py}, das alle erforderlichen Funktionen zur Befüllung der Suchmaschine in sich vereinte. Mit der Zeit und der Implementierung zusätzlicher Features wuchs dieses Skript jedoch kontinuierlich an, bis es schließlich unübersichtlich und schwer wartbar wurde. Aus diesem Grund entschied ich mich für eine Refaktorierung und teilte das ursprüngliche Skript in mehrere spezialisierte Module auf:
+
+\begin{itemize} \item \texttt{main.py}: Das Hauptskript, das den gesamten Datenabfrage- und Indexierungsprozess orchestriert \item \texttt{api\_client.py}: Verwaltet die Kommunikation mit der Pokemon API
+\item \texttt{data\_processor.py}: Verarbeitet und transformiert die Pokemon-Daten für die Indexierung \item \texttt{solr\_indexer.py}: Übernimmt das Setup des Solr-Schemas und die Dokumentenindexierung \item \texttt{config.py}: Enthält Konfigurationseinstellungen und das Logging-Setup \end{itemize}
+
+Das ursprüngliche Skript \texttt{fetcher\_v2.py} fungierte als zentrale Komponente zur Befüllung der Suchmaschine und übernahm sämtliche Aufgaben von der Konfiguration des Solr-Schemas über den Abruf der Daten von der PokeAPI bis hin zu deren Verarbeitung und finaler Indexierung. Es war so konzipiert, dass es auch auf einem frischen Solr-Core ohne manuelle Vorbereitung funktionsfähig war. Die Daten wurden systematisch bereinigt, angereichert und in eine für Solr optimierte Struktur überführt. Ein integrierter Batching-Mechanismus und eine detaillierte Protokollierung gewährleisteten dabei sowohl Effizienz als auch Transparenz im gesamten Indexierungsprozess. Eine detailliertere Beschreibung der einzelnen Komponenten und deren Funktionsweise folgt in den nachstehenden Kapiteln.
 
 \paragraph{Frontend (HTML, CSS, JavaScript)}
 Die Benutzeroberfläche wurde mit klassischen Web-Technologien realisiert, um eine einfache und reaktionsschnelle User Experience zu gewährleisten.
