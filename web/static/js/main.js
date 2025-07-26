@@ -1,269 +1,354 @@
-class PokemonSearchApp {
-            constructor() {
-                this.currentPage = 0;
-                this.resultsPerPage = 20;
-                this.totalResults = 0;
-                this.isLoading = false;
-                
-                this.modal = document.getElementById('pokemonModal');
-                this.modalBody = document.getElementById('modalBody');
-                this.modalCloseBtn = document.querySelector('.modal-close-btn');
+document.addEventListener('DOMContentLoaded', () => {
+    const searchForm = document.getElementById('searchForm');
+    const searchQuery = document.getElementById('searchQuery');
+    const resultsGrid = document.getElementById('pokemonGrid');
+    const resultsCountDiv = document.getElementById('results-count');
+    const spellcheckDiv = document.getElementById('spellcheck');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const errorMessage = document.getElementById('errorMessage');
+    const paginationDiv = document.getElementById('pagination');
 
-                this.initializeEventListeners();
-                this.performSearch(); // Load initial results
+    const generationFilter = document.getElementById('generationFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const legendaryFilter = document.getElementById('legendaryFilter');
+    const sortBy = document.getElementById('sortBy');
+    const sortOrder = document.getElementById('sortOrder');
+
+    let currentPage = 0;
+    const rowsPerPage = 20;
+    let autocompleteTimeout;
+    let currentSuggestionIndex = -1;
+
+    // Function to perform a search
+    const search = async (query, page = 0) => {
+        currentPage = page;
+        loadingMessage.style.display = 'block';
+        errorMessage.style.display = 'none';
+        resultsGrid.innerHTML = '';
+        paginationDiv.innerHTML = '';
+
+        const params = new URLSearchParams({
+            q: query,
+            start: page * rowsPerPage,
+            rows: rowsPerPage,
+            sort: sortBy.value,
+            order: sortOrder.value,
+            generation: generationFilter.value,
+            type: typeFilter.value,
+            legendary: legendaryFilter.value,
+        });
+
+        try {
+            const response = await fetch(`/api/search?${params.toString()}`);
+            const data = await response.json();
+
+            if (data.success) {
+                displayResults(data);
+                displayPagination(data);
+            } else {
+                errorMessage.textContent = data.error || 'An unknown error occurred.';
+                errorMessage.style.display = 'block';
             }
+        } catch (error) {
+            errorMessage.textContent = 'Failed to fetch search results.';
+            errorMessage.style.display = 'block';
+        } finally {
+            loadingMessage.style.display = 'none';
+        }
+    };
 
-            initializeEventListeners() {
-                // Search form submission
-                document.getElementById('searchForm').addEventListener('submit', (e) => {
+    window.search = search; // Make search function globally accessible
+
+    window.search = search; // Make search function globally accessible
+
+    // Function to display results
+    const displayResults = (data) => {
+        resultsCountDiv.textContent = `Found ${data.total} results`;
+
+        if (data.spellcheck && data.spellcheck.collated) {
+            const collatedLink = document.createElement('a');
+            collatedLink.href = '#';
+            collatedLink.textContent = data.spellcheck.collated;
+            collatedLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                search(data.spellcheck.collated);
+            });
+            spellcheckDiv.innerHTML = 'Did you mean: ';
+            spellcheckDiv.appendChild(collatedLink);
+            spellcheckDiv.append('?');
+        } else if (data.spellcheck && data.spellcheck.suggestions.length > 0) {
+            const suggestionsHtml = document.createElement('span');
+            suggestionsHtml.textContent = 'Did you mean: ';
+            data.spellcheck.suggestions.forEach((s, index) => {
+                const suggestionLink = document.createElement('a');
+                suggestionLink.href = '#';
+                suggestionLink.textContent = s;
+                suggestionLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    this.currentPage = 0;
-                    this.performSearch();
+                    search(s);
                 });
-
-                // Filter changes
-                ['generationFilter', 'typeFilter', 'legendaryFilter', 'sortBy', 'sortOrder'].forEach(id => {
-                    document.getElementById(id).addEventListener('change', () => {
-                        this.currentPage = 0;
-                        this.performSearch();
-                    });
-                });
-
-                // Real-time search (debounced)
-                let searchTimeout;
-                document.getElementById('searchQuery').addEventListener('input', () => {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(() => {
-                        this.currentPage = 0;
-                        this.performSearch();
-                    }, 500);
-                });
-                
-                // Modal closing events
-                this.modalCloseBtn.addEventListener('click', () => this.hidePokemonDetails());
-                this.modal.addEventListener('click', (e) => {
-                    if (e.target === this.modal) {
-                        this.hidePokemonDetails();
-                    }
-                });
-            }
-
-            async performSearch() {
-                if (this.isLoading) return;
-                
-                this.isLoading = true;
-                this.showLoading(true);
-                this.hideError();
-
-                try {
-                    const params = this.buildSearchParams();
-                    const response = await fetch(`/api/search?${params}`);
-                    const data = await response.json();
-
-                    if (data.success) {
-                        this.displayResults(data);
-                        this.updatePagination(data);
-                    } else {
-                        this.showError(data.error || 'Search failed');
-                    }
-                } catch (error) {
-                    this.showError('Network error: ' + error.message);
-                } finally {
-                    this.showLoading(false);
-                    this.isLoading = false;
+                suggestionsHtml.appendChild(suggestionLink);
+                if (index < data.spellcheck.suggestions.length - 1) {
+                    suggestionsHtml.append(', ');
                 }
-            }
-
-            buildSearchParams() {
-                const params = new URLSearchParams();
-                
-                const query = document.getElementById('searchQuery').value.trim();
-                if (query) params.append('q', query);
-                
-                params.append('start', this.currentPage * this.resultsPerPage);
-                params.append('rows', this.resultsPerPage);
-                
-                const generation = document.getElementById('generationFilter').value;
-                if (generation) params.append('generation', generation);
-                
-                const type = document.getElementById('typeFilter').value;
-                if (type) params.append('type', type);
-                
-                const legendary = document.getElementById('legendaryFilter').value;
-                if (legendary) params.append('legendary', legendary);
-                
-                params.append('sort', document.getElementById('sortBy').value);
-                params.append('order', document.getElementById('sortOrder').value);
-                
-                return params.toString();
-            }
-
-            displayResults(data) {
-                const grid = document.getElementById('pokemonGrid');
-                const resultsCount = document.getElementById('resultsCount');
-                
-                this.totalResults = data.total;
-                
-                // Update results count
-                resultsCount.textContent = `Found ${data.total} Pokemon`;
-                
-                // Clear previous results
-                grid.innerHTML = '';
-                
-                // Display Pokemon cards
-                data.results.forEach(pokemon => {
-                    const card = this.createPokemonCard(pokemon);
-                    grid.appendChild(card);
-                });
-            }
-
-            createPokemonCard(pokemon) {
-                const card = document.createElement('div');
-                card.className = 'pokemon-card';
-                card.onclick = () => this.showPokemonDetails(pokemon);
-                
-                const types = pokemon.types || [];
-                
-                card.innerHTML = `
-                    <div class="pokemon-header">
-                        <div class="pokemon-name">${pokemon.name}</div>
-                        <div class="pokemon-id">#${String(pokemon.pokemon_id).padStart(3, '0')}</div>
-                    </div>
-                    
-                    <div class="pokemon-types">
-                        ${types.map(type => 
-                            `<span class="type-badge type-${type}">${type}</span>`
-                        ).join('')}
-                    </div>
-                `;
-                
-                return card;
-            }
-
-            showPokemonDetails(pokemon) {
-                const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.pokemon_id}.png`;
-                
-                const types = pokemon.types || [];
-                const abilities = pokemon.abilities || [];
-                const flavorText = pokemon.flavor_text || 'No description available.';
-                const levelupMoves = pokemon.levelup_moves || [];
-
-                this.modalBody.innerHTML = `
-                    <img src="${imageUrl}" alt="${pokemon.name}" class="modal-pokemon-image" onerror="this.style.display='none'">
-                    
-                    <div class="modal-pokemon-header">
-                        <div class="modal-pokemon-name">${pokemon.name}</div>
-                        <div class="modal-pokemon-id">#${String(pokemon.pokemon_id).padStart(3, '0')}</div>
-                    </div>
-
-                    <div class="modal-types">
-                        ${types.map(type => `<span class="type-badge type-${type}">${type}</span>`).join('')}
-                    </div>
-
-                    <div class="modal-section">
-                        <div class="modal-section-title">Stats</div>
-                        <div class="pokemon-stats modal-stats-grid">
-                            <div class="stat-item"><div class="stat-label">HP</div><div class="stat-value">${pokemon.stat_hp || 0}</div></div>
-                            <div class="stat-item"><div class="stat-label">Attack</div><div class="stat-value">${pokemon.stat_attack || 0}</div></div>
-                            <div class="stat-item"><div class="stat-label">Defense</div><div class="stat-value">${pokemon.stat_defense || 0}</div></div>
-                            <div class="stat-item"><div class="stat-label">Sp. Atk</div><div class="stat-value">${pokemon['stat_special-attack'] || 0}</div></div>
-                            <div class="stat-item"><div class="stat-label">Sp. Def</div><div class="stat-value">${pokemon['stat_special-defense'] || 0}</div></div>
-                            <div class="stat-item"><div class="stat-label">Speed</div><div class="stat-value">${pokemon.stat_speed || 0}</div></div>
-                        </div>
-                    </div>
-                    
-                    ${abilities.length > 0 ? `
-                    <div class="modal-section">
-                        <div class="modal-section-title">Abilities</div>
-                        <div class="ability-list">
-                            ${abilities.map(ability => `<span class="ability-tag">${ability}</span>`).join('')}
-                        </div>
-                    </div>` : ''}
-
-                    ${levelupMoves.length > 0 ? `
-                    <div class="modal-section">
-                        <div class="modal-section-title">Level-Up Moves</div>
-                        <div class="ability-list">
-                            ${levelupMoves.map(move => `<span class="ability-tag move-tag">${move}</span>`).join('')}
-                        </div>
-                    </div>` : ''}
-
-                    <div class="modal-section">
-                        <div class="modal-section-title">Description</div>
-                        <div class="pokemon-flavor">${flavorText}</div>
-                    </div>
-                `;
-
-                this.modal.classList.add('show');
-                document.body.style.overflow = 'hidden'; // Prevent background scrolling
-            }
-            
-            hidePokemonDetails() {
-                this.modal.classList.remove('show');
-                document.body.style.overflow = ''; // Restore background scrolling
-            }
-
-            updatePagination(data) {
-                const pagination = document.getElementById('pagination');
-                pagination.innerHTML = '';
-                
-                const totalPages = Math.ceil(data.total / this.resultsPerPage);
-                const currentPage = this.currentPage;
-                
-                if (totalPages <= 1) return;
-                
-                // Previous button
-                if (currentPage > 0) {
-                    const prevBtn = this.createPageButton('Previous', currentPage - 1);
-                    pagination.appendChild(prevBtn);
-                }
-                
-                // Page numbers
-                const startPage = Math.max(0, currentPage - 2);
-                const endPage = Math.min(totalPages - 1, currentPage + 2);
-                
-                for (let i = startPage; i <= endPage; i++) {
-                    const pageBtn = this.createPageButton(i + 1, i);
-                    if (i === currentPage) {
-                        pageBtn.classList.add('active');
-                    }
-                    pagination.appendChild(pageBtn);
-                }
-                
-                // Next button
-                if (currentPage < totalPages - 1) {
-                    const nextBtn = this.createPageButton('Next', currentPage + 1);
-                    pagination.appendChild(nextBtn);
-                }
-            }
-
-            createPageButton(text, page) {
-                const btn = document.createElement('button');
-                btn.className = 'page-btn';
-                btn.textContent = text;
-                btn.onclick = () => {
-                    this.currentPage = page;
-                    this.performSearch();
-                };
-                return btn;
-            }
-
-            showLoading(show) {
-                document.getElementById('loadingMessage').style.display = show ? 'block' : 'none';
-            }
-
-            showError(message) {
-                const errorDiv = document.getElementById('errorMessage');
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-            }
-
-            hideError() {
-                document.getElementById('errorMessage').style.display = 'none';
-            }
+            });
+            suggestionsHtml.append('?');
+            spellcheckDiv.innerHTML = '';
+            spellcheckDiv.appendChild(suggestionsHtml);
+        } else {
+            spellcheckDiv.innerHTML = '';
         }
 
-        // Initialize the app when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            new PokemonSearchApp();
+        data.results.forEach(pokemon => {
+            const card = document.createElement('div');
+            card.className = 'pokemon-card';
+            card.innerHTML = `
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png" alt="${pokemon.name}">
+                <h3>${pokemon.name}</h3>
+                <p>#${pokemon.id}</p>
+                <p style="display: none;">${pokemon.stat_special_attack}</p>
+                <p style="display: none;">${pokemon.stat_special_defense}</p>
+            `;
+            card.addEventListener('click', () => openModal(pokemon.id));
+            resultsGrid.appendChild(card);
         });
+    };
+
+    // Function to display pagination
+    const displayPagination = (data) => {
+        const totalPages = Math.ceil(data.total / rowsPerPage);
+        if (totalPages <= 1) return;
+
+        for (let i = 0; i < totalPages; i++) {
+            const pageLink = document.createElement('a');
+            pageLink.href = '#';
+            pageLink.textContent = i + 1;
+            if (i === currentPage) {
+                pageLink.className = 'active';
+            }
+            pageLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                search(searchQuery.value, i);
+            });
+            paginationDiv.appendChild(pageLink);
+        }
+    };
+
+    // Event Listeners
+    searchForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        search(searchQuery.value);
+    });
+
+    [generationFilter, typeFilter, legendaryFilter, sortBy, sortOrder].forEach(el => {
+        el.addEventListener('change', () => search(searchQuery.value));
+    });
+
+    // Autocomplete functionality
+    const setupAutocomplete = () => {
+        const autocompleteContainer = document.createElement('div');
+        autocompleteContainer.className = 'autocomplete-suggestions';
+        autocompleteContainer.style.display = 'none';
+        searchQuery.parentNode.appendChild(autocompleteContainer);
+
+        const showSuggestions = (suggestions) => {
+            autocompleteContainer.innerHTML = '';
+            currentSuggestionIndex = -1;
+            
+            if (suggestions.length === 0) {
+                autocompleteContainer.style.display = 'none';
+                return;
+            }
+
+            suggestions.forEach((suggestion, index) => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'autocomplete-item';
+                
+                // Highlight the matching part anywhere in the suggestion (case-insensitive)
+                const queryLower = searchQuery.value.toLowerCase();
+                const suggestionLower = suggestion.toLowerCase();
+                const matchIndex = suggestionLower.indexOf(queryLower);
+                
+                if (matchIndex >= 0) {
+                    // Highlight the matching part wherever it appears
+                    const beforeMatch = suggestion.substring(0, matchIndex);
+                    const matchedPart = suggestion.substring(matchIndex, matchIndex + queryLower.length);
+                    const afterMatch = suggestion.substring(matchIndex + queryLower.length);
+                    suggestionItem.innerHTML = `${beforeMatch}<strong>${matchedPart}</strong>${afterMatch}`;
+                } else {
+                    suggestionItem.textContent = suggestion;
+                }
+                
+                suggestionItem.addEventListener('click', () => {
+                    searchQuery.value = suggestion;
+                    autocompleteContainer.style.display = 'none';
+                    search(suggestion);
+                });
+                autocompleteContainer.appendChild(suggestionItem);
+            });
+
+            autocompleteContainer.style.display = 'block';
+        };
+
+        const fetchSuggestions = async (query) => {
+            if (query.length < 2) {
+                autocompleteContainer.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/autocomplete?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.success && data.suggestions.length > 0) {
+                    showSuggestions(data.suggestions);
+                } else {
+                    autocompleteContainer.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Autocomplete error:', error);
+                autocompleteContainer.style.display = 'none';
+            }
+        };
+
+        searchQuery.addEventListener('input', (e) => {
+            clearTimeout(autocompleteTimeout);
+            const query = e.target.value.trim();
+            
+            if (query.length >= 2) {
+                autocompleteTimeout = setTimeout(() => fetchSuggestions(query), 300);
+            } else {
+                autocompleteContainer.style.display = 'none';
+            }
+        });
+
+        searchQuery.addEventListener('keydown', (e) => {
+            const suggestions = autocompleteContainer.querySelectorAll('.autocomplete-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentSuggestionIndex = Math.min(currentSuggestionIndex + 1, suggestions.length - 1);
+                updateSuggestionHighlight(suggestions);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentSuggestionIndex = Math.max(currentSuggestionIndex - 1, -1);
+                updateSuggestionHighlight(suggestions);
+            } else if (e.key === 'Enter') {
+                if (currentSuggestionIndex >= 0 && suggestions[currentSuggestionIndex]) {
+                    e.preventDefault();
+                    const selectedSuggestion = suggestions[currentSuggestionIndex].textContent;
+                    searchQuery.value = selectedSuggestion;
+                    autocompleteContainer.style.display = 'none';
+                    search(selectedSuggestion);
+                }
+            } else if (e.key === 'Escape') {
+                autocompleteContainer.style.display = 'none';
+                currentSuggestionIndex = -1;
+            }
+        });
+
+        const updateSuggestionHighlight = (suggestions) => {
+            suggestions.forEach((item, index) => {
+                if (index === currentSuggestionIndex) {
+                    item.classList.add('highlighted');
+                } else {
+                    item.classList.remove('highlighted');
+                }
+            });
+        };
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchQuery.contains(e.target) && !autocompleteContainer.contains(e.target)) {
+                autocompleteContainer.style.display = 'none';
+            }
+        });
+    };
+
+    setupAutocomplete();
+
+    // Initial search
+    search('*:*');
+});
+
+// Functions for modal
+const openModal = async (pokemonId) => {
+    const modal = document.getElementById('pokemonModal');
+    const modalBody = document.getElementById('modalBody');
+
+    try {
+        const response = await fetch(`/api/pokemon/${pokemonId}`);
+        const data = await response.json();
+
+        if (data.success) {
+            const pokemon = data.pokemon;
+            modalBody.innerHTML = `
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png" alt="${pokemon.name}" class="modal-pokemon-image">
+                <div class="modal-pokemon-header">
+                    <h2 class="modal-pokemon-name">${pokemon.name}</h2>
+                    <p class="modal-pokemon-id">#${pokemon.id}</p>
+                </div>
+
+                <div class="modal-section">
+                    <h3 class="modal-section-title">Types</h3>
+                    <div class="modal-types">
+                        ${pokemon.types.map(type => `<span class="type-badge type-${type.toLowerCase()}">${type}</span>`).join('')}
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <h3 class="modal-section-title">Abilities</h3>
+                    <p>${pokemon.all_abilities.join(', ')}</p>
+                </div>
+
+                <div class="modal-section">
+                    <h3 class="modal-section-title">Stats</h3>
+                    <div class="modal-stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">HP</span>
+                            <span class="stat-value">${pokemon.stat_hp}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Attack</span>
+                            <span class="stat-value">${pokemon.stat_attack}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Defense</span>
+                            <span class="stat-value">${pokemon.stat_defense}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Speed</span>
+                            <span class="stat-value">${pokemon.stat_speed}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Special Attack</span>
+                            <span class="stat-value">${pokemon.stat_special_attack}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Special Defense</span>
+                            <span class="stat-value">${pokemon.stat_special_defense}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <h3 class="modal-section-title">Flavor Text</h3>
+                    <p>${pokemon.flavor_text}</p>
+                </div>
+            `;
+            modal.classList.add('show');
+        } else {
+            alert(data.error);
+        }
+    } catch (error) {
+        alert('Failed to load Pokemon details.');
+    }
+
+    const closeBtn = modal.querySelector('.modal-close-btn');
+    closeBtn.onclick = () => modal.classList.remove('show');
+    window.onclick = (event) => {
+        if (event.target == modal) {
+            modal.classList.remove('show');
+        }
+    };
+};

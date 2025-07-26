@@ -5,7 +5,11 @@ A Pokémon search application using Apache Solr for indexing and search function
 ```
 solr-pokedex/
 ├── docker-compose.yml          # Docker compose configuration
-├── fetcher_v2.py              # Pokemon data fetcher script
+├── main.py                    # Main Pokemon data fetcher script
+├── api_client.py              # Pokemon API client module
+├── data_processor.py          # Data processing and transformation
+├── solr_indexer.py            # Solr indexing and schema management
+├── config.py                  # Configuration and logging setup
 ├── install.sh                 # Automated setup script
 ├── LICENSE                    # Project license
 ├── README.md                  # This file
@@ -16,6 +20,7 @@ solr-pokedex/
     ├── Dockerfile            # Web app Docker configuration
     ├── requirements.txt      # Web app specific dependencies
     ├── templates/            # HTML templates
+    ├── static/               # CSS and JavaScript files
     └── web_app.py           # Flask web application
 ```
 
@@ -37,7 +42,7 @@ chmod +x install.sh
 The script will handle:
 - Creating the Python virtual environment
 - Installing dependencies
-- Making scripts executable
+- Making main.py executable
 - Starting the Solr service
 - Fetching and indexing Pokémon data
 
@@ -73,9 +78,9 @@ With the virtual environment activated, install the required packages:
 pip install -r requirements.txt
 ```
 
-#### 5. Make Fetcher Script Executable
+#### 5. Make Main Script Executable
 ```bash
-chmod +x fetcher_v2.py
+chmod +x main.py
 ```
 
 #### 6. Start Solr Service
@@ -89,9 +94,9 @@ podman compose up -d
 ```
 
 #### 7. Fetch Pokémon Data
-Run the fetcher script to populate Solr with Pokémon data:
+Run the main script to populate Solr with Pokémon data:
 ```bash
-./fetcher_v2.py
+./main.py
 ```
 
 ## Usage
@@ -105,21 +110,39 @@ Apache Solr admin interface is available at:
 http://localhost:8983
 ```
 
+### API Endpoints
+The web application provides several API endpoints:
+- `GET /api/search` - Main search endpoint with enhanced substring matching
+- `GET /api/autocomplete` - Real-time autocomplete suggestions
+- `GET /api/pokemon/<id>` - Individual Pokémon details
+- `GET /api/stats` - Search statistics and collection overview
+
 ## How to Use the Search Interface
-The search bar provides a powerful way to find Pokémon using simple text or advanced Solr query syntax. The engine supports several types of searches:
+The search bar provides a powerful way to find Pokémon using simple text or advanced Solr query syntax. The engine supports several types of searches with intelligent autocomplete suggestions:
 
 ### Search Capabilities
+
+*   **Autocomplete Suggestions**: As you type, the search bar provides real-time suggestions based on Pokémon names, types, and abilities. The autocomplete supports:
+    *   **Substring Matching**: Typing `saur` will suggest Bulbasaur, Ivysaur, and Venusaur
+    *   **Case-Insensitive**: Works regardless of capitalization (`bulba`, `BULBA`, or `Bulba` all work)
+    *   **Keyboard Navigation**: Use arrow keys to navigate suggestions, Enter to select, Escape to close
+    *   **Visual Highlighting**: Matching parts of suggestions are highlighted in bold
+
+*   **Enhanced Substring Search**: The search engine now intelligently handles partial matches anywhere in Pokémon names:
+    *   **Example:** Searching for `saur` will find all Pokémon ending in "-saur" (Bulbasaur, Ivysaur, Venusaur)
+    *   **Example:** Searching for `char` will find Charmander, Charmeleon, and Charizard
+    *   **Example:** Searching for `pika` will find Pikachu and related Pokémon
 
 *   **Keyword Search**: This is the default search behavior. Simply typing a term into the search bar performs a broad, case-insensitive search across key fields like Pokémon Name, Types, Abilities, and Flavor Text.
     *   **Example:** A search for `stone` will find Pokémon of the `rock` type (a synonym), Pokémon like `Onix` (described as a stone snake), and Pokémon with abilities like `Sturdy`.
 
 *   **Phrase Search**: To search for an exact sequence of words, enclose the phrase in double quotes (`"`). The search will look for the exact phrase in the Pokémon's name and flavor text.
-    *   **Example:** `"stores electricity in its cheeks"` will  find Pokémon like Pikachu and Pichu, without needing a field specifier.
+    *   **Example:** `"stores electricity in its cheeks"` will find Pokémon like Pikachu and Pichu, without needing a field specifier.
 
 *   **Wildcard Search**: Use the asterisk (`*`) as a wildcard to match any sequence of characters. This is automatically used in keyword searches but can also be used in advanced field-based searches.
     *   **Example:** In an advanced query, `name:*saur` will find Bulbasaur, Ivysaur, and Venusaur.
 
-*   **Faceted Search **: This feature allows you to refine and filter your search results. The UI displays available filters (like Generation, Primary Type, Legendary) along with a count of matching Pokémon for each filter. Clicking on these categories allows you to progressively narrow down your results.
+*   **Faceted Search**: This feature allows you to refine and filter your search results. The UI displays available filters (like Generation, Primary Type, Legendary) along with a count of matching Pokémon for each filter. Clicking on these categories allows you to progressively narrow down your results.
 
 ### Advanced (Field-Based) Search
 For more specific queries, you can still use the `field:value` syntax in the search bar.
@@ -144,7 +167,9 @@ You can combine multiple queries using boolean operators `AND`, `OR`, and `NOT`.
 - Find Generation 1 Ghost type Pokémon or Generation 2 Fairy type Pokémon: `(generation:1 AND primary_type:ghost) OR (generation:1 AND primary_type:fairy)`
 
 ## Features
-- **Search Interface**: Web-based search for Pokémon
+- **Enhanced Search Interface**: Web-based search for Pokémon with intelligent autocomplete
+- **Real-time Autocomplete**: Instant suggestions as you type, supporting substring matching anywhere in Pokémon names
+- **Smart Search**: Case-insensitive search with enhanced substring matching (e.g., "saur" finds all "-saur" Pokémon)
 - **Solr Integration**: Fast, scalable search using Apache Solr
 - **Data Fetching**: Automated script to populate the search index. Fetcher is rate limited to 100ms, to respect the usage guidelines of https://pokeapi.co/
 - **Containerized**: Easy deployment with Docker/Podman
@@ -152,8 +177,13 @@ You can combine multiple queries using boolean operators `AND`, `OR`, and `NOT`.
 ## Development
 ### Project Components
 - **`install.sh`**: Automated setup script for quick deployment
-- **`fetcher_v2.py`**: Fetches Pokémon data and indexes it into Solr
-- **`web/web_app.py`**: Flask web application providing the search interface
+- **`main.py`**: Main script that orchestrates the data fetching and indexing process
+- **`api_client.py`**: Handles communication with the Pokemon API
+- **`data_processor.py`**: Processes and transforms Pokemon data for indexing
+- **`solr_indexer.py`**: Manages Solr schema setup and document indexing
+- **`config.py`**: Configuration settings and logging setup
+- **`web/web_app.py`**: Flask web application providing the search interface with autocomplete
+- **`web/static/`**: Frontend assets (CSS, JavaScript) for the search interface
 - **`solr/configsets/`**: Solr schema and configuration files
 - **`docker-compose.yml`**: Defines the multi-container application setup
 
