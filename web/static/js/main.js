@@ -55,15 +55,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    window.search = search; // Make search function globally accessible
+
+    window.search = search; // Make search function globally accessible
+
     // Function to display results
     const displayResults = (data) => {
         resultsCountDiv.textContent = `Found ${data.total} results`;
 
         if (data.spellcheck && data.spellcheck.collated) {
-            spellcheckDiv.innerHTML = `Did you mean: <a href="#" onclick="search('${data.spellcheck.collated}')">${data.spellcheck.collated}</a>?`;
+            const collatedLink = document.createElement('a');
+            collatedLink.href = '#';
+            collatedLink.textContent = data.spellcheck.collated;
+            collatedLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                search(data.spellcheck.collated);
+            });
+            spellcheckDiv.innerHTML = 'Did you mean: ';
+            spellcheckDiv.appendChild(collatedLink);
+            spellcheckDiv.append('?');
         } else if (data.spellcheck && data.spellcheck.suggestions.length > 0) {
-            const suggestionsHtml = data.spellcheck.suggestions.map(s => `<a href="#" onclick="search('${s}')">${s}</a>`).join(', ');
-            spellcheckDiv.innerHTML = `Did you mean: ${suggestionsHtml}?`;
+            const suggestionsHtml = document.createElement('span');
+            suggestionsHtml.textContent = 'Did you mean: ';
+            data.spellcheck.suggestions.forEach((s, index) => {
+                const suggestionLink = document.createElement('a');
+                suggestionLink.href = '#';
+                suggestionLink.textContent = s;
+                suggestionLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    search(s);
+                });
+                suggestionsHtml.appendChild(suggestionLink);
+                if (index < data.spellcheck.suggestions.length - 1) {
+                    suggestionsHtml.append(', ');
+                }
+            });
+            suggestionsHtml.append('?');
+            spellcheckDiv.innerHTML = '';
+            spellcheckDiv.appendChild(suggestionsHtml);
         } else {
             spellcheckDiv.innerHTML = '';
         }
