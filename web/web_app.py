@@ -120,21 +120,27 @@ class PokemonSearchApp:
                 is_ability = self.check_if_ability(query_lower)
                 is_type = self.check_if_type(query_lower)
                 
+                logger.info(f"Query analysis for '{query}': is_ability={is_ability}, is_type={is_type}")
+                
                 # Enhanced query building based on what the query actually represents
                 if is_ability:
                     # For abilities, search in ability fields with proper case matching
                     title_query = query.title()
                     enhanced_query = f'name:*{query}* OR all_abilities:"{title_query}" OR all_abilities:*{title_query}*'
+                    logger.info(f"Using ability search strategy: {enhanced_query}")
                 elif is_type:
                     # For types, search in type fields
                     title_query = query.title()
                     enhanced_query = f'name:*{query}* OR types:*{title_query}* OR primary_type:{title_query} OR secondary_type:{title_query}'
+                    logger.info(f"Using type search strategy: {enhanced_query}")
                 elif len(query) <= 3 or ' ' not in query:
                     # Short queries or single words: enhanced wildcard + edismax
                     enhanced_query = f'name:*{query}* OR name:*{query.capitalize()}*'
+                    logger.info(f"Using short query strategy: {enhanced_query}")
                 else:
                     # Regular multi-word queries: use original query
                     enhanced_query = query
+                    logger.info(f"Using standard query strategy: {enhanced_query}")
                 
                 # Use edismax for most queries to leverage field boosting
                 params = {
@@ -254,6 +260,7 @@ class PokemonSearchApp:
                 facet_field='all_abilities',
                 facet_mincount=1
             )
+            logger.info(f"Ability check for '{query}' ('{title_query}'): {results.hits} hits")
             return results.hits > 0
         except Exception as e:
             logger.warning(f"Error checking ability: {e}")
@@ -279,6 +286,7 @@ class PokemonSearchApp:
                 facet_field=['primary_type', 'secondary_type'],
                 facet_mincount=1
             )
+            logger.info(f"Type check for '{query}' ('{title_query}'): {results.hits} hits")
             return results.hits > 0
         except Exception as e:
             logger.warning(f"Error checking type: {e}")
