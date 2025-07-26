@@ -112,7 +112,6 @@
     -->
 
     <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" />
-    <field name="pokemon_id" type="pint" indexed="true" stored="true" docValues="true" />
     <!-- docValues are enabled by default for long type so we don't need to index the version field  -->
     <field name="_version_" type="plong" indexed="true" stored="true"/>
 
@@ -126,8 +125,6 @@
 
     <field name="_text_" type="text_general" indexed="true" stored="false" multiValued="true"/>
 
-    <field name="spellcheck_base" type="text_general" indexed="true" stored="false" multiValued="true"/>
-
     <!-- This can be enabled, in case the client does not know what fields may be searched. It isn't enabled by default
          because it's very expensive to index everything twice. -->
     <!-- <copyField source="*" dest="_text_"/> -->
@@ -138,7 +135,7 @@
        RESTRICTION: the glob-like pattern in the name attribute must have a "*"
        only at the start or the end.  -->
 
-    <dynamicField name="*_i"   type="pint"     indexed="true"  stored="true" docValues="true"/>
+    <dynamicField name="*_i"   type="pint"     indexed="true"  stored="true"/>
     <dynamicField name="*_is"  type="pints"    indexed="true"  stored="true"/>
     <dynamicField name="*_s"   type="string"   indexed="true"  stored="true" />
     <dynamicField name="*_ss"  type="strings"  indexed="true"  stored="true"/>
@@ -301,21 +298,17 @@
          (empty by default), and down cases.  At query time only, it
          also applies synonyms.
     -->
-    <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100" multiValued="true">
+    <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100" multiValued="true" termVectors="true">
       <analyzer type="index">
         <tokenizer name="standard"/>
-        <filter name="stop" ignoreCase="true" words="stopwords.txt" />
-        <!-- in this example, we will only use synonyms at query time
-        <filter name="synonymGraph" synonyms="index_synonyms.txt" ignoreCase="true" expand="false"/>
-        <filter name="flattenGraph"/>
-        -->
         <filter name="lowercase"/>
+        <filter name="stop" ignoreCase="true" words="stopwords.txt" />
       </analyzer>
       <analyzer type="query">
         <tokenizer name="standard"/>
+        <filter name="lowercase"/>
         <filter name="stop" ignoreCase="true" words="stopwords.txt" />
         <filter name="synonymGraph" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
-        <filter name="lowercase"/>
       </analyzer>
     </fieldType>
 

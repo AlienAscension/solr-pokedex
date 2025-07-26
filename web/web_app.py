@@ -29,6 +29,7 @@ import os
 import logging
 from typing import Dict, List, Any, Optional
 import json
+import requests
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -82,7 +83,10 @@ class PokemonSearchApp:
         """
         try:
             # Get search parameters
-            query = request.args.get('q', '*:*')
+            query = request.args.get('q', '') # Default to empty string
+            if not query.strip():
+                query = '*:*' # If query is empty or just whitespace, search all
+            
             start = int(request.args.get('start', 0))
             rows = min(int(request.args.get('rows', 20)), 100)  # Max 100 results
             sort_field = request.args.get('sort', 'pokemon_id')
@@ -94,38 +98,70 @@ class PokemonSearchApp:
             ability = request.args.get('ability')
             is_legendary = request.args.get('legendary')
             
-            # Build Solr query
-            solr_query = self.build_solr_query(
-                query, generation, pokemon_type, ability, is_legendary
+            # Build Solr filters
+            filters = self.build_solr_filters(
+                generation, pokemon_type, ability, is_legendary
             )
             
-            """            """            # Build sort parameter
+            # Build sort parameter
             sort_param = f"{sort_field} {sort_order}"
             
-            # Execute search
+            # Execute main search
             params = {
-                'q': solr_query,
+                'q': query, # Use the raw query for the main search
                 'start': start,
                 'rows': rows,
                 'sort': sort_param,
                 'facet': 'true',
                 'facet.field': ['generation', 'primary_type', 'color', 'habitat'],
                 'facet.mincount': 1,
-                'spellcheck': 'true',
-                'spellcheck.collate': 'true',
-                'spellcheck.maxCollations': 5,
+                'defType': 'edismax',
+                'qf': 'name^5 types^2 all_abilities^2 flavor_text^1 spellcheck_base^1',
             }
+            
+            if filters:
+                params['fq'] = filters # Add filters to the fq parameter
+                
             results = self.solr.search(**params)
 
-            # Extract spellcheck suggestions
+            # Fetch spellcheck suggestions separately
             suggestions = []
             collated_suggestion = None
-            if results.spellcheck and results.spellcheck.get('suggestions'):
-                for term, suggestion_info in results.spellcheck['suggestions'].items():
-                    if suggestion_info.get('suggestion'):
-                        suggestions.extend([s['word'] for s in suggestion_info['suggestion']])
-                if results.spellcheck.get('collations'):
-                    collated_suggestion = results.spellcheck['collations'][1] if len(results.spellcheck['collations']) > 1 else None
+            if query.strip() and query != '*:*': # Only request spellcheck if there's a real query
+                spellcheck_params = {
+                    'q': query,
+                    'spellcheck': 'true',
+                    'spellcheck.build': 'true', # This was the missing piece!
+                    'spellcheck.collate': 'true',
+                    'spellcheck.maxCollations': 5,
+                    'spellcheck.dictionary': 'default',
+                    'spellcheck.extendedResults': 'true',
+                    'wt': 'json' # Ensure JSON response
+                }
+                try:
+                    spellcheck_response = requests.get(f"{self.solr.url.rstrip('/')}/spell", params=spellcheck_params)
+                    spellcheck_response.raise_for_status()
+                    spellcheck_data = spellcheck_response.json()
+                    logger.info(f"Raw spellcheck response: {spellcheck_data}")
+
+                    if spellcheck_data.get('spellcheck') and spellcheck_data['spellcheck'].get('suggestions'):
+                        # Solr's spellcheck suggestions can be an array with the term and then the suggestion object
+                        # We need to iterate through them to find the actual suggestions
+                        for item in spellcheck_data['spellcheck']['suggestions']:
+                            if isinstance(item, dict) and item.get('suggestion'):
+                                suggestions.extend([s['word'] for s in item['suggestion']])
+                        
+                        if spellcheck_data['spellcheck'].get('collations'):
+                            collations_list = spellcheck_data['spellcheck']['collations']
+                            # Collations can be a list of [original, corrected] or just [corrected]
+                            # We want the corrected one, which is usually the second element if both are present
+                            # or the first if only one is present.
+                            if len(collations_list) > 1 and isinstance(collations_list[1], str):
+                                collated_suggestion = collations_list[1]
+                            elif len(collations_list) > 0 and isinstance(collations_list[0], str):
+                                collated_suggestion = collations_list[0]
+                except requests.exceptions.RequestException as e:
+                    logger.error(f"Error fetching spellcheck suggestions: {e}")
 
             
             # Format response
@@ -160,37 +196,21 @@ class PokemonSearchApp:
                 'results': []
             }), 500
     
-    def build_solr_query(self, query: str, generation: Optional[str], 
+    def build_solr_filters(self, generation: Optional[str], 
                         pokemon_type: Optional[str], ability: Optional[str],
-                        is_legendary: Optional[str]) -> str:
+                        is_legendary: Optional[str]) -> List[str]:
         """
-        Build Solr query string with filters
+        Build Solr filter query strings
         
         Args:
-            query: Main search query
             generation: Generation filter
             pokemon_type: Type filter
             ability: Ability filter
             is_legendary: Legendary filter
             
         Returns:
-            Complete Solr query string
+            List of Solr filter query strings
         """
-        # Start with main query
-        if not query or query.strip() == '':
-            query = '*:*'
-        
-        # Handle full-text search
-        if query != '*:*' and not ':' in query:
-            # NEW: Check if the user intended a phrase search
-            if query.startswith('"') and query.endswith('"'):
-                # It's a phrase search. Target the most likely text fields.
-                # The query already contains the quotes, which is correct for Solr's syntax.
-                query = f'{{!qf="flavor_text^2 name^5 spellcheck_base^1" defType=edismax}}{query}'
-            else:
-                # It's a standard keyword search. Use wildcards.
-                query = f'{{!qf="name^5 types^2 all_abilities^2 flavor_text^1 spellcheck_base^1" defType=edismax}}{query}'
-
         filters = []
         
         # Add filters
@@ -209,12 +229,7 @@ class PokemonSearchApp:
             else:
                 filters.append('(is_legendary:false AND is_mythical:false)')
         
-        # Combine query and filters
-        if filters:
-            filter_string = ' AND '.join(filters)
-            return f'({query}) AND ({filter_string})'
-        
-        return query
+        return filters
     
     def format_facets(self, facets: Dict) -> Dict[str, List[Dict]]:
         """

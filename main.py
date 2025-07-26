@@ -68,6 +68,9 @@ def main():
     success = solr_indexer.index_documents(all_documents)
 
     if success:
+        solr_indexer.solr.commit()
+        solr_indexer.solr.optimize()
+        solr_indexer.build_spellcheck_dictionary()
         print("\n✅ Successfully fetched and indexed all Pokemon data!")
         print("🔍 You can now search using the web interface or Solr admin panel")
     else:
