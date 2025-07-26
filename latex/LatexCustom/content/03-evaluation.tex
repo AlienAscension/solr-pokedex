@@ -1,89 +1,88 @@
 \section{Evaluation und Optimierung}
 
-\subsection{Funktionale Tests der implementierten Suchanfragetypen}
+Die Validierung der implementierten Suchfunktionalitäten erfolgte mittels eines automatisierten Test-Scripts mit 48 verschiedenen Suchszenarien. Alle Tests liefen erfolgreich durch (Success Rate: 100\%), was zunächst einmal die technische Stabilität des Systems bestätigt.
 
-Die Validierung der Suchfunktionalitäten erfolgte durch systematische Tests mit einem automatisierten Test-Script, das 39 verschiedene Suchszenarien gegen die laufende Anwendung ausführte. Alle Tests wurden erfolgreich abgeschlossen (Success Rate: 100\%), was die technische Stabilität des Systems bestätigt.
+\subsection{Funktionale Tests der Suchanfragetypen}
 
 \subsubsection{Namensbasierte Suche}
 
-\textbf{Exakte Namenssuche:} Tests mit vollständigen Pokemon-Namen wie "`Pikachu"', "`Charizard"' und "`Bulbasaur"' ergaben eine nahezu perfekte Trefferquote. Fünf von sechs getesteten Pokemon standen an Position 1, während "`Mew"' an Position 2 erschien, vermutlich aufgrund der Kürze des Namens und möglicher Übereinstimmungen mit anderen Feldern.
+Die exakte Namenssuche funktioniert tadellos -- bei Queries wie \texttt{pikachu} oder \texttt{charizard} erreicht das System perfekte Werte (Precision, Recall und F-Measure jeweils 1.0). Interessant wird es bei der partiellen Namenssuche mit Wildcards: Hier zeigt sich, dass Substring-Matching grundsätzlich gut funktioniert, wobei kürzere Fragmente wie \texttt{char} erwartungsgemäß mehr (und damit weniger präzise) Treffer liefern als spezifischere wie \texttt{saur}.
 
-\textbf{Partielle Namenssuche:} Die Wildcard-Funktionalität zeigte hervorragende Ergebnisse bei Substring-Matching. Eingaben wie "`pika"' (1 Treffer), "`char"' (7 Treffer) und "`saur"' (3 Treffer) demonstrieren die korrekte Implementierung der \texttt{name:*query*}-Pattern-Suche. Die Suchanfrage "`char"' fand erfolgreich alle Charmander-Evolutionslinien-Pokemon.
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Suchtyp} & \textbf{Precision} & \textbf{Recall} & \textbf{F-Measure} \\
+\hline
+Exakte Namen & 1.00 & 1.00 & 1.00 \\
+Partielle Namen & 0.71 & 1.00 & 0.80 \\
+\hline
+\end{tabular}
+\caption{Performance der namensbasierten Suche}
+\end{table}
 
-\subsubsection{Thematische Suche-Evaluation}
+\subsubsection{Thematische Suche}
 
-\textbf{Typ-basierte Suche:} Die Tests zeigten gemischte Ergebnisse für Typ-Suchen. Während "`fire"' ein Ergebnis lieferte, ergaben "`water"', "`grass"', "`electric"' und "`psychic"' keine Treffer. Dies deutet darauf hin, dass die Field-Boosting-Konfiguration für Typ-Suchen optimiert werden könnte, oder dass die getesteten Begriffe nicht exakt mit den indexierten Typ-Werten übereinstimmen.
+Hier wird es problematisch: Die typ-basierte Suche ist praktisch defekt -- Suchanfragen nach \texttt{fire}, \texttt{water} oder \texttt{electric} liefern entweder gar keine oder völlig irrelevante Ergebnisse. Das ist ein kritischer Bug, der dringend behoben werden muss.
 
-\textbf{Fähigkeiten-Suche:} Alle getesteten Fähigkeiten ("`overgrow"', "`blaze"', "`torrent"', "`static"') ergaben null Treffer. Eine Analyse der Ursache zeigte, dass die Fähigkeiten-Namen in der Datenbank möglicherweise in formatierter Form (z.B. "`Overgrow"' statt "`overgrow"') gespeichert sind, was Case-Sensitivity-Probleme verursacht.
+Die Fähigkeiten-Suche funktioniert zwar technisch, hat aber ein massives Präzisionsproblem: Bei Queries wie \texttt{overgrow} oder \texttt{blaze} werden zwar alle relevanten Pokémon gefunden (Recall = 1.0), aber gleichzeitig auch jede Menge irrelevante Treffer, was zu einer miserablen Precision von nur 0.15 führt.
 
 \subsubsection{Interaktive Features}
 
-\textbf{Autocomplete-Performance:} Die Autocomplete-Funktionalität zeigte exzellente Ergebnisse mit durchschnittlichen Antwortzeiten von 8-9ms und einer Perfect Relevance Rate von 100\% für alle getesteten Eingaben. Die Anzahl der Vorschläge variierte sinnvoll: "`pika"' (1 Vorschlag), "`char"' (7 Vorschläge), "`bulb"' (2 Vorschläge), "`saur"' (3 Vorschläge).
+Das Autocomplete arbeitet blitzschnell (8-9ms Antwortzeit) und liefert zu 100\% relevante Vorschläge -- hier läuft alles rund. Die Rechtschreibkorrektur hingegen existiert zwar, macht aber praktisch nichts: Tippfehler werden nicht korrigiert, obwohl das System nicht abstürzt.
 
-\textbf{Rechtschreibkorrektur:} Die SpellCheck-Tests ergaben, dass das System zwar technisch funktioniert (keine Fehler), aber keine Korrekturvorschläge für die getesteten Tippfehler "`piakchu"', "`charizrd"', "`bulbasr"' und "`squirtl"' lieferte. Dies deutet darauf hin, dass das SpellCheck-Dictionary möglicherweise nicht vollständig aufgebaut wurde oder die Fehlertoleranz-Schwellenwerte zu restriktiv sind.
+\subsection{Information Retrieval Metriken}
 
-\subsubsection{Filter-Funktionalität}
+Die Gesamtperformance des Systems zeigt ein gemischtes Bild:
 
-Die facettierte Suche funktionierte zuverlässig mit realistischen Ergebniszahlen:
-\begin{itemize}
-    \item Generation 1 Filter: 790 Treffer
-    \item Fire Type Filter: 81 Treffer  
-    \item Legendary Filter: 94 Treffer
-    \item Kombinierte Filter (Gen 1 + Fire): 65 Treffer
-    \item Kombinierte Filter (Gen 1 + Legendary): 78 Treffer
-\end{itemize}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|c|l|}
+\hline
+\textbf{Metrik} & \textbf{Wert} & \textbf{Bewertung} \\
+\hline
+Overall Precision & 0.44 & Ausbaufähig \\
+Overall Recall & 0.93 & Sehr gut \\
+F-Measure & 0.52 & Okay \\
+Mean Reciprocal Rank & 1.00 & Perfekt \\
+Mean Average Precision & 0.90 & Sehr gut \\
+\hline
+\end{tabular}
+\caption{Gesamtperformance des Suchsystems}
+\end{table}
 
-Die Kombinationslogik funktioniert korrekt, da die kombinierten Filter weniger Ergebnisse liefern als die Einzelfilter.
+Das System hat eine interessante Charakteristik: Es findet fast alles was relevant ist (hoher Recall), produziert dabei aber viel "Rauschen" in Form irrelevanter Treffer (niedrige Precision). Positiv ist, dass das erste Ergebnis praktisch immer das richtige ist (MRR = 1.0).
 
 \subsection{Performance-Analyse}
 
-\subsubsection{Antwortzeit-Metriken}
+Mit durchschnittlich 16ms Antwortzeit ist das System erfreulich schnell -- alle Anfragen werden in unter 20ms beantwortet. Hier gibt es definitiv keine Performance-Probleme.
 
-Das System zeigte hervorragende Performance-Werte:
+\subsection{Identifizierte Optimierungsfelder}
+
+Basierend auf den quantitativen Ergebnissen lassen sich klare Prioritäten ableiten:
+
+\textbf{Identifizierte Verbesserungsfelder:}
+
+\textbf{Kritische Probleme:}
 \begin{itemize}
-    \item \textbf{Durchschnittliche Antwortzeit:} 12ms
-    \item \textbf{Schnellste Antwort:} 8ms (einfache Queries)
-    \item \textbf{Langsamste Antwort:} 30ms (sehr lange Query)
-    \item \textbf{Autocomplete-Performance:} 8-9ms durchschnittlich
+\item Typ-basierte Suche ist komplett defekt und liefert keine verwertbaren Ergebnisse
+\item Overall Precision von 0.44 deutlich unter dem angestrebten Niveau von >0.6
 \end{itemize}
 
-Diese Werte liegen deutlich unter der 100ms-Schwelle für gefühlte Echtzeit-Interaktion und gewährleisten eine flüssige Benutzererfahrung.
-
-\subsubsection{Skalierbarkeits-Indikatoren}
-
-Die Edge-Case-Tests zeigten robustes Verhalten:
+\textbf{Relevante Schwächen:}
 \begin{itemize}
-    \item Leere Queries werden korrekt behandelt (1025 Gesamtergebnisse)
-    \item Sehr lange Queries (30ms Antwortzeit) degradieren graceful
-    \item Sonderzeichen werden sicher verarbeitet (0 Treffer, keine Fehler)
-    \item Single-Character-Suchen sind funktional (896 Treffer für "`a"')
+\item Fähigkeiten-Suche hat mit 15\% Precision erhebliche Relevanzprobleme
+\item Ranking-Qualität in den Top-10 Ergebnissen ist verbesserungswürdig
 \end{itemize}
 
-\subsection{Bewertung und Optimierung des Relevanzrankings}
-
-\subsubsection{Relevanz-Metriken}
-
-Die Relevanz-Bewertung ergab:
+\textbf{Optimierungspotenzial:}
 \begin{itemize}
-    \item \textbf{Durchschnittlicher Relevanz-Score:} 0.47
-    \item \textbf{Perfect Relevance Rate:} 46.2\%
-    \item \textbf{Success Rate:} 100\% (technische Funktionalität)
+\item Query-Expansion könnte thematische Suchen verbessern
+\item Rechtschreibkorrektur funktioniert grundsätzlich, könnte aber erweitert werden
 \end{itemize}
 
-Der moderate Relevanz-Score von 0.47 deutet auf Optimierungspotential beim Field-Boosting hin, insbesondere für thematische Suchen.
+\subsection{Fazit der Evaluation}
 
-\subsubsection{Identifizierte Optimierungsansätze}
+Das entwickelte Suchsystem zeigt eine klare Zweiteilung in der Funktionalität: Während namensbasierte Suchen zufriedenstellende Ergebnisse liefern und durch gute Performance (16ms Antwortzeit) überzeugen, offenbart die systematische Evaluation mit standardisierten IR-Metriken erhebliche Defizite bei thematischen Suchfunktionen. 
 
-Basierend auf den Test-Ergebnissen wurden folgende Verbesserungsmöglichkeiten identifiziert:
-
-\textbf{Case-Insensitive Suche:} Die Implementierung einer case-insensitive Suche für Fähigkeiten und Typen könnte die Trefferquote erheblich verbessern.
-
-\textbf{SpellCheck-Konfiguration:} Die Rechtschreibkorrektur benötigt eine Anpassung der Toleranz-Schwellenwerte oder eine vollständige Neuerstellung des Dictionaries.
-
-\textbf{Field-Boosting-Anpassung:} Eine Erhöhung der Gewichtung für \texttt{types} und \texttt{all\_abilities} könnte thematische Suchen verbessern.
-
-\textbf{Query-Expansion:} Die Implementierung von Synonymen (z.B. "`fire"' → "`fire type"') könnte die Trefferquote für Typ-Suchen erhöhen.
-
-\subsection{Quantitative Evaluation der Suchergebnisse}
-
-Die systematische Evaluation mit 39 Test-Cases lieferte messbare Qualitätsindikatoren für die verschiedenen Suchfunktionalitäten. Das implementierte System erreicht exzellente Performance-Werte bei Namens-basierten Suchen und Autocomplete-Funktionalität, zeigt jedoch Verbesserungspotential bei thematischen Suchen und Rechtschreibkorrektur. Die 100\%ige technische Success Rate bestätigt die Robustheit der Implementierung.
+Die dokumentierten Schwächen -- insbesondere die defekte Typ-Suche und die niedrige Overall Precision -- zeigen konkrete Ansatzpunkte für zukünftige Weiterentwicklungen auf. Die 100\%ige technische Stabilität und die funktionale Grundarchitektur demonstrieren die erfolgreiche Umsetzung der IR-Konzepte und bieten eine solide Basis für entsprechende Verbesserungen.

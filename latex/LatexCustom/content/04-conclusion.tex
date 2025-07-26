@@ -3,15 +3,30 @@
 
 \subsection{Zusammenfassung der Projektergebnisse}
 \label{sec:fazit_zusammenfassung}
-Fassen Sie die erreichten Ziele und das finale Produkt noch einmal kurz zusammen.
+
+Die entwickelte Suchmaschine \texttt{Solr Pokédex} demonstriert erfolgreich die praktische Umsetzung von Information Retrieval-Konzepten in einer vollständigen Suchanwendung. Mit 1025 indexierten Pokémon aus neun Generationen und einer containerisierten Architektur wurde eine funktionsfähige Suchmaschine geschaffen, die verschiedene Suchmodi unterstützt -- von einfacher Keyword-Suche über facettierte Filter bis hin zu Autocomplete-Funktionalität.
+
+Die technische Umsetzung überzeugt durch eine saubere Modularisierung der Komponenten: Von der systematischen Datenakquise über die PokeAPI bis zur responsiven Flask-Weboberfläche arbeiten alle Teile zuverlässig zusammen. Besonders positiv hervorzuheben ist die technische Stabilität und die exzellente Performance von 16ms durchschnittlicher Antwortzeit.
 
 \subsection{Reflektion der Herausforderungen und Lösungsansätze}
 \label{sec:fazit_herausforderungen}
-Was waren die größten Schwierigkeiten im Projekt (z.B. Schema-Design, Daten-Parsing, Flask-Anbindung) und wie haben Sie diese gelöst?
+
+Die größte technische Hürde stellte das Schema-Design dar – die Transformation verschachtelter JSON-Strukturen in ein suchoptimiertes Solr-Schema erforderte durchdachte Entscheidungen zwischen Flexibilität und Performance. Die implementierte Flattening-Strategie mit separaten Feldern für Typ-Kategorien und die Nutzung von Copy-Fields für Spell-Check haben sich bewährt.
+
+Die Containerisierung mit Docker Compose eliminierte Deployment-Probleme und machte das System plattformübergreifend nutzbar.
+
+Die Evaluation offenbarte jedoch kritische Schwächen: Die typ-basierte Suche ist praktisch unbrauchbar und die Overall Precision von 0.44 liegt deutlich unter professionellen Standards. Diese Probleme resultieren hauptsächlich aus suboptimaler Query-Konfiguration im edismax-Parser und fehlender thematischer Gewichtung.
 
 \subsection{Mögliche Erweiterungen und zukünftige Optimierungen}
 \label{sec:fazit_ausblick}
-Welche Ideen haben Sie für die Zukunft? (z.B. weitere Datenquellen, komplexere Filter, Benutzer-Accounts, etc.)
+
+Die identifizierten Performance-Probleme bieten konkrete Ansatzpunkte für Verbesserungen: Eine Überarbeitung der Feldgewichtung im edismax-Parser könnte die Precision erheblich steigern, während Query-Expansion-Techniken thematische Suchen verbessern würden.
+
+Interessante Erweiterungen umfassen die Integration weiterer Datenquellen wie Movesets oder Zuchtinformationen, die Implementierung von Benutzer-Accounts mit personalisierten Favoriten und erweiterte Visualisierungen wie Statistik-Vergleiche oder Typ-Effektivitäts-Charts.
+
+Technisch wäre eine Migration zu moderneren Suchmaschinen wie OpenSearch oder die Integration von Machine Learning für intelligentere Ranking-Algorithmen denkbar. Die solide Architektur-Basis ermöglicht solche Erweiterungen ohne grundlegende Systemänderungen.
+
+Das Projekt zeigt exemplarisch, wie theoretische IR-Konzepte in praktische Anwendungen überführt werden können – mit allen Erfolgen und Lernmöglichkeiten, die ein reales System mit sich bringt.
 
 
 % --- Literaturverzeichnis ---
@@ -22,14 +37,3 @@ Welche Ideen haben Sie für die Zukunft? (z.B. weitere Datenquellen, komplexere 
 
 % --- Anhang ---
 \appendix % Schaltet auf Anhangs-Modus (A, B, C...)
-\section{Auszug aus dem Solr-Schema}
-\label{app:solr_schema}
-Fügen Sie hier relevante Teile Ihrer `managed-schema` ein, z.B. als Code-Block.
-
-\section{Relevante Code-Auszüge}
-\label{app:code}
-Zeigen Sie hier wichtige Snippets aus \texttt{fetcher\_v2.py} oder \texttt{web\_app.py}.
-
-\section{Screenshot der Benutzeroberfläche}
-\label{app:screenshot}
-Ein vollseitiger Screenshot der fertigen Anwendung.
