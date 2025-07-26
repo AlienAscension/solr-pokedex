@@ -73,6 +73,11 @@ class PokemonSearchApp:
         def api_stats():
             """API endpoint for search statistics"""
             return self.get_search_stats()
+        
+        @self.app.route('/api/autocomplete')
+        def api_autocomplete():
+            """API endpoint for search autocomplete suggestions"""
+            return self.get_autocomplete_suggestions()
     
     def search_pokemon(self) -> Dict[str, Any]:
         """
@@ -336,6 +341,88 @@ class PokemonSearchApp:
             return jsonify({
                 'success': False,
                 'error': str(e)
+            }), 500
+    
+    def get_autocomplete_suggestions(self) -> Dict[str, Any]:
+        """
+        Get autocomplete suggestions based on partial query
+        
+        Returns:
+            JSON response with suggestions
+        """
+        try:
+            query = request.args.get('q', '').strip()
+            if not query or len(query) < 2:
+                return jsonify({
+                    'success': True,
+                    'suggestions': []
+                })
+            
+            suggestions = []
+            
+            # Get term suggestions from Solr using terms component
+            try:
+                terms_params = {
+                    'terms': 'true',
+                    'terms.fl': 'name,types,all_abilities',
+                    'terms.prefix': query.lower(),
+                    'terms.limit': 10,
+                    'wt': 'json'
+                }
+                
+                terms_response = requests.get(f"{self.solr.url.rstrip('/')}/terms", params=terms_params)
+                terms_response.raise_for_status()
+                terms_data = terms_response.json()
+                
+                if terms_data.get('terms'):
+                    for field, terms_list in terms_data['terms'].items():
+                        if isinstance(terms_list, list):
+                            # Terms come as [term1, count1, term2, count2, ...]
+                            for i in range(0, len(terms_list), 2):
+                                if i < len(terms_list):
+                                    term = terms_list[i]
+                                    if term.lower().startswith(query.lower()) and term not in suggestions:
+                                        suggestions.append(term)
+                                        
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"Terms request failed: {e}")
+            
+            # Also get Pokemon name suggestions by doing a prefix search
+            try:
+                name_params = {
+                    'q': f'name:{query}*',
+                    'rows': 10,
+                    'fl': 'name',
+                    'wt': 'json'
+                }
+                
+                name_response = requests.get(f"{self.solr.url.rstrip('/')}/select", params=name_params)
+                name_response.raise_for_status()
+                name_data = name_response.json()
+                
+                if name_data.get('response', {}).get('docs'):
+                    for doc in name_data['response']['docs']:
+                        name = doc.get('name', '')
+                        if name and name not in suggestions:
+                            suggestions.append(name)
+                            
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"Name search failed: {e}")
+            
+            # Remove duplicates and limit results
+            unique_suggestions = list(dict.fromkeys(suggestions))[:8]
+            
+            return jsonify({
+                'success': True,
+                'suggestions': unique_suggestions
+            })
+            
+        except Exception as e:
+            logger.error(f"Autocomplete error: {e}")
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'suggestions': []
             }), 500
 
 # Create Flask app instance

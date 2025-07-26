@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentPage = 0;
     const rowsPerPage = 20;
+    let autocompleteTimeout;
+    let currentSuggestionIndex = -1;
 
     // Function to perform a search
     const search = async (query, page = 0) => {
@@ -141,6 +143,114 @@ document.addEventListener('DOMContentLoaded', () => {
     [generationFilter, typeFilter, legendaryFilter, sortBy, sortOrder].forEach(el => {
         el.addEventListener('change', () => search(searchQuery.value));
     });
+
+    // Autocomplete functionality
+    const setupAutocomplete = () => {
+        const autocompleteContainer = document.createElement('div');
+        autocompleteContainer.className = 'autocomplete-suggestions';
+        autocompleteContainer.style.display = 'none';
+        searchQuery.parentNode.appendChild(autocompleteContainer);
+
+        const showSuggestions = (suggestions) => {
+            autocompleteContainer.innerHTML = '';
+            currentSuggestionIndex = -1;
+            
+            if (suggestions.length === 0) {
+                autocompleteContainer.style.display = 'none';
+                return;
+            }
+
+            suggestions.forEach((suggestion, index) => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'autocomplete-item';
+                suggestionItem.textContent = suggestion;
+                suggestionItem.addEventListener('click', () => {
+                    searchQuery.value = suggestion;
+                    autocompleteContainer.style.display = 'none';
+                    search(suggestion);
+                });
+                autocompleteContainer.appendChild(suggestionItem);
+            });
+
+            autocompleteContainer.style.display = 'block';
+        };
+
+        const fetchSuggestions = async (query) => {
+            if (query.length < 2) {
+                autocompleteContainer.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/autocomplete?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.success && data.suggestions.length > 0) {
+                    showSuggestions(data.suggestions);
+                } else {
+                    autocompleteContainer.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Autocomplete error:', error);
+                autocompleteContainer.style.display = 'none';
+            }
+        };
+
+        searchQuery.addEventListener('input', (e) => {
+            clearTimeout(autocompleteTimeout);
+            const query = e.target.value.trim();
+            
+            if (query.length >= 2) {
+                autocompleteTimeout = setTimeout(() => fetchSuggestions(query), 300);
+            } else {
+                autocompleteContainer.style.display = 'none';
+            }
+        });
+
+        searchQuery.addEventListener('keydown', (e) => {
+            const suggestions = autocompleteContainer.querySelectorAll('.autocomplete-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentSuggestionIndex = Math.min(currentSuggestionIndex + 1, suggestions.length - 1);
+                updateSuggestionHighlight(suggestions);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentSuggestionIndex = Math.max(currentSuggestionIndex - 1, -1);
+                updateSuggestionHighlight(suggestions);
+            } else if (e.key === 'Enter') {
+                if (currentSuggestionIndex >= 0 && suggestions[currentSuggestionIndex]) {
+                    e.preventDefault();
+                    const selectedSuggestion = suggestions[currentSuggestionIndex].textContent;
+                    searchQuery.value = selectedSuggestion;
+                    autocompleteContainer.style.display = 'none';
+                    search(selectedSuggestion);
+                }
+            } else if (e.key === 'Escape') {
+                autocompleteContainer.style.display = 'none';
+                currentSuggestionIndex = -1;
+            }
+        });
+
+        const updateSuggestionHighlight = (suggestions) => {
+            suggestions.forEach((item, index) => {
+                if (index === currentSuggestionIndex) {
+                    item.classList.add('highlighted');
+                } else {
+                    item.classList.remove('highlighted');
+                }
+            });
+        };
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!searchQuery.contains(e.target) && !autocompleteContainer.contains(e.target)) {
+                autocompleteContainer.style.display = 'none';
+            }
+        });
+    };
+
+    setupAutocomplete();
 
     // Initial search
     search('*:*');
