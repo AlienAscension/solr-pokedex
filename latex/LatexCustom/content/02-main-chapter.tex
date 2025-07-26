@@ -145,21 +145,68 @@ Das API-Design umfasst mehrere spezialisierte Endpunkte: Der Hauptsuchendpunkt \
 
 Die Frontend-Integration erfolgt über ein HTML-Template in \texttt{templates/index.html}, das JavaScript für dynamische Interaktion mit den API-Endpunkten nutzt. Diese Architektur ermöglicht sowohl die Verwendung als API-Service als auch als interaktive Webanwendung.
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/Screenshot_whole_page.png}
+    \caption{Vollständige Benutzeroberfläche der Pokemon-Suchmaschine mit allen Hauptkomponenten: Suchfeld, Filter-Optionen (Generation, Typ, Legendary-Status), Sortierungsoptionen und Pokemon-Ergebniskarten mit Bildern und Basisdaten}
+    \label{fig:whole_page}
+\end{figure}
+
+Abbildung~\ref{fig:whole_page} zeigt die vollständige Benutzeroberfläche der entwickelten Webanwendung. Die Oberfläche folgt einem klaren, dreistufigen Layout: Das zentrale Suchfeld ermöglicht freie Texteingaben, die Filterleiste bietet facettierte Suchoptionen nach Generation, Typ und Legendary-Status, und die Ergebnisdarstellung präsentiert Pokemon-Karten mit Bild, Name, Pokedex-Nummer und grundlegenden Informationen in einem responsiven Grid-Layout.
+
 \subsection{Implementierung der Suchfunktionalitäten}
 
 Das Suchsystem nutzt verschiedene Solr-Features für unterschiedliche Anwendungsszenarien und bietet sowohl einfache als auch fortgeschrittene Suchmöglichkeiten. Die Standard-Keyword-Suche verwendet den \texttt{edismax} Query-Parser mit einer durchdachten Feldgewichtung über den \texttt{qf} Parameter: \texttt{name\textasciicircum 5 types\textasciicircum 2 all\_abilities\textasciicircum 2 flavor\_text\textasciicircum 1}. Diese Priorisierung sorgt dafür, dass Namensübereinstimmungen die höchste Relevanz erhalten, während Typen und Fähigkeiten mittlere Priorität haben und Flavor-Text-Matches am niedrigsten gewichtet werden.
 
 Für erweiterte Substring-Matching wird eine intelligente Wildcard-Suche mit dem Pattern \texttt{name:*query*} implementiert, die Teilübereinstimmungen an beliebiger Position im Namen findet. Dies ermöglicht es, dass eine Suche nach "`saur"' alle Pokemon mit "`-saur"'-Endung findet (Bulbasaur, Ivysaur, Venusaur).
 
-Die facettierte Suche wurde für die Dimensionen \texttt{generation}, \texttt{primary\_type}, \texttt{color} und \texttt{habitat} implementiert und nutzt Solrs native Facettierungs-Features mit automatischer Zählung verfügbarer Optionen. Filter können über Solrs \texttt{fq} (Filter Query) Parameter kombiniert werden, wodurch komplexe Anfragen wie "`Generation 1 UND Feuer-Typ UND Legendary"' möglich werden.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\textwidth]{figures/Screenshot_multiple_suggestions.png}
+    \caption{Erweiterte Autocomplete-Funktionalität bei der Eingabe von "`saur"' mit mehreren relevanten Vorschlägen: Bulbasaur, Ivysaur und Venusaur demonstrieren das Substring-Matching}
+    \label{fig:multiple_suggestions}
+\end{figure}
 
-Die Autocomplete-Funktionalität kombiniert mehrere Ansätze: Solrs Terms Component für häufige Begriffe und Wildcard-Suche für Substring-Matching. Die Implementierung unterstützt Case-Insensitive-Suche und bietet Echtzeit-Vorschläge während der Eingabe.
+Die Autocomplete-Funktionalität kombiniert mehrere Ansätze: Solrs Terms Component für häufige Begriffe und Wildcard-Suche für Substring-Matching. Die Implementierung unterstützt Case-Insensitive-Suche und bietet Echtzeit-Vorschläge während der Eingabe. Wie in Abbildung~\ref{fig:multiple_suggestions} dargestellt, werden bei der Eingabe von "`saur"' automatisch alle Pokemon mit dieser Endung vorgeschlagen, was die Effizienz der Suche erheblich steigert.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{figures/screenshot_search_suggestion.png}
+    \caption{Einfache Autocomplete-Suggestion bei der Eingabe von "`bulba"' mit direktem Vorschlag für Bulbasaur}
+    \label{fig:simple_autocomplete}
+\end{figure}
+
+Abbildung~\ref{fig:simple_autocomplete} zeigt die grundlegende Autocomplete-Funktionalität bei der Eingabe von "`bulba"'. Das System erkennt die Eingabe und schlägt unmittelbar "`Bulbasaur"' vor, wodurch Nutzer schnell zu ihrem gesuchten Pokemon navigieren können.
+
+Die facettierte Suche wurde für die Dimensionen \texttt{generation}, \texttt{primary\_type}, \texttt{color} und \texttt{habitat} implementiert und nutzt Solrs native Facettierungs-Features mit automatischer Zählung verfügbarer Optionen. Filter können über Solrs \texttt{fq} (Filter Query) Parameter kombiniert werden, wodurch komplexe Anfragen wie "`Generation 1 UND Feuer-Typ UND Legendary"' möglich werden.
 
 Für Rechtschreibkorrektur wird Solrs SpellCheck-Component genutzt, der ein Index-basiertes Dictionary verwendet. Das System kann Tippfehler erkennen und alternative Suchbegriffe vorschlagen, was die Benutzerfreundlichkeit verbessert.
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/Screenshot_search_did_you_mean.png}
+    \caption{Rechtschreibkorrektur-Feature bei der fehlerhaften Eingabe "`bulbasr"' mit "`Did you mean: bulbasaur?"'-Vorschlag basierend auf dem Solr SpellCheck-Component}
+    \label{fig:spellcheck}
+\end{figure}
+
+Die Rechtschreibkorrektur-Funktionalität ist in Abbildung~\ref{fig:spellcheck} dargestellt. Bei der fehlerhaften Eingabe "`bulbasr"' erkennt das System automatisch den Tippfehler und bietet den korrekten Suchbegriff "`bulbasaur"' als klickbaren Link an. Diese Funktion basiert auf dem indexierten Vokabular und hilft Nutzern, trotz Eingabefehlern schnell zum gewünschten Ergebnis zu gelangen.
+
+\subsection{Pokemon-Detailansicht und Modal-Interface}
+
+Die Detailansicht für einzelne Pokemon wird über den \texttt{/api/pokemon/<id>} Endpunkt realisiert und bietet umfassende Informationen zu jedem Pokemon in einer Modal-Darstellung. Diese Implementierung ermöglicht es, detaillierte Informationen anzuzeigen, ohne die Hauptsuchseite zu verlassen und den Suchkontext zu verlieren.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{figures/Screenshot_modal.png}
+    \caption{Modal-Detailansicht für Bulbasaur mit vollständigen Pokemon-Informationen: Typen (Grass/Poison), Fähigkeiten (Overgrow, Chlorophyll), detaillierte Basis-Statistiken (HP, Attack, Defense, Special Attack, Special Defense, Speed) und Flavor-Text-Beschreibung}
+    \label{fig:pokemon_modal}
+\end{figure}
+
+Abbildung~\ref{fig:pokemon_modal} zeigt die umfassende Modal-Detailansicht am Beispiel von Bulbasaur. Die Darstellung präsentiert strukturiert alle relevanten Pokemon-Daten: Typ-Badges für visuelle Erkennbarkeit, eine übersichtliche Auflistung der Fähigkeiten mit Unterscheidung zwischen normalen und versteckten Fähigkeiten, detaillierte Statistikwerte für alle sechs Basis-Stats und den vollständigen Flavor-Text aus den Pokemon-Spielen. Diese Modal-Implementierung bietet eine Balance zwischen Informationsdichte und Benutzerfreundlichkeit.
+
 \subsection{Orchestrierung durch \texttt{main.py}}
 
-Das Hauptskript fungiert als zentrale Koordinationsstelle für den gesamten Datenimport-Prozess. Nach der Initialisierung aller Komponenten -- \texttt{ApiClient}, \texttt{DataProcessor} und \texttt{SolrIndexer} -- erfolgt ein Solr-Verbindungstest und das Schema-Setup. Die iterative Verarbeitung aller Pokemon erfolgt generationsweise für die ersten drei Generationen, wobei eine robuste Fehlerbehandlung auf Pokemon-Ebene den Gesamtprozess bei einzelnen Problemen nicht unterbricht.
+Das Hauptskript fungiert als zentrale Koordinationsstelle für den gesamten Datenimport-Prozess. Nach der Initialisierung aller Komponenten -- \texttt{ApiClient}, \texttt{DataProcessor} und \texttt{SolrIndexer} -- erfolgt ein Solr-Verbindungstest und das Schema-Setup. Die iterative Verarbeitung aller Pokemon erfolgt generationsweise, wobei das Errorhandling den Gesamtprozess bei einzelnen Problemen nicht unterbricht.
 
 Den Abschluss bilden Index-Optimierung und die Erstellung des Spellcheck-Dictionary, wodurch das System für optimale Suchperformance konfiguriert wird.
 
@@ -176,3 +223,5 @@ Das Relevanzranking wurde durch Field-Boosting optimiert, wobei verschiedene Gew
 \subsection{Diskussion der optionalen Features}
 
 Die implementierten Features wie Highlighting und Autocompletion erweitern die Benutzerfreundlichkeit. Das Highlighting hebt Suchbegriffe in den Ergebnissen hervor, während die Autocomplete-Funktionalität durch Echtzeit-Vorschläge die Sucheffizienz verbessert.
+
+Die Detailansicht einzelner Pokemon wird in einer Modal-Darstellung präsentiert, wie in Abbildung~\ref{fig:pokemon_modal} gezeigt. Diese Ansicht bietet umfassende Informationen zu einem Pokemon, einschließlich aller Statistiken, Fähigkeiten, Typen und Beschreibungstexte, ohne die Hauptsuchseite zu verlassen.
