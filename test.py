@@ -135,19 +135,38 @@ class PokemonSearchTester:
         print("\n⚡ Testing Ability Search...")
         
         test_cases = [
-            ("overgrow", ["Bulbasaur"]),
-            ("blaze", ["Charmander"]),
-            ("torrent", ["Squirtle"]),
-            ("static", ["Pikachu"])
+            ("overgrow", "Overgrow", ["Bulbasaur"]),
+            ("blaze", "Blaze", ["Charmander"]),
+            ("torrent", "Torrent", ["Squirtle"]),
+            ("static", "Static", ["Pikachu"])
         ]
         
-        for query, expected_pokemon in test_cases:
-            result = self._perform_search_test(
-                f"Ability Search: {query}",
-                {"q": query},
+        for lower_ability, title_ability, expected_pokemon in test_cases:
+            # Test simple query (uses wildcard on name only)
+            result_simple = self._perform_search_test(
+                f"Ability Simple: {title_ability}",
+                {"q": title_ability},
                 expected_contains=expected_pokemon
             )
-            print(f"  ✓ {query}: {result.response_time:.3f}s, Found: {result.total_results}")
+            
+            # Test complex query to force edismax (add space to make it "complex")
+            result_complex = self._perform_search_test(
+                f"Ability Complex: {title_ability} pokemon",
+                {"q": f"{title_ability} pokemon"},
+                expected_contains=expected_pokemon
+            )
+            
+            # Test field-specific search
+            result_field = self._perform_search_test(
+                f"Ability Field: all_abilities:{title_ability}",
+                {"q": f"all_abilities:{title_ability}"},
+                expected_contains=expected_pokemon
+            )
+            
+            print(f"  ✓ {title_ability} (simple): {result_simple.response_time:.3f}s, Found: {result_simple.total_results}")
+            print(f"  ✓ {title_ability} (complex): {result_complex.response_time:.3f}s, Found: {result_complex.total_results}")
+            print(f"  ✓ {title_ability} (field): {result_field.response_time:.3f}s, Found: {result_field.total_results}")
+            print()
     
     def test_autocomplete_functionality(self):
         """Test autocomplete suggestions"""
