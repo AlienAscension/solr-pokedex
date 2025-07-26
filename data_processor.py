@@ -151,5 +151,8 @@ class DataProcessor:
             # Evolution chain info
             evolves_from = species_data.get('evolves_from_species')
             doc['evolves_from'] = evolves_from['name'].title() if evolves_from else None
+
+            # Add fields for spellchecking
+            doc['spellcheck_base'] = [doc['name'], doc['flavor_text']]
         
         return doc

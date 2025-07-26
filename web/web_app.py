@@ -113,6 +113,7 @@ class PokemonSearchApp:
                 'facet.mincount': 1,
                 'spellcheck': 'true',
                 'spellcheck.collate': 'true',
+                'spellcheck.maxCollations': 5,
             }
             results = self.solr.search(**params)
 
@@ -185,10 +186,10 @@ class PokemonSearchApp:
             if query.startswith('"') and query.endswith('"'):
                 # It's a phrase search. Target the most likely text fields.
                 # The query already contains the quotes, which is correct for Solr's syntax.
-                query = f'(flavor_text:{query} OR name:{query})'
+                query = f'{{!qf="flavor_text^2 name^5 spellcheck_base^1" defType=edismax}}{query}'
             else:
                 # It's a standard keyword search. Use wildcards.
-                query = f'(name:*{query}* OR types:*{query}* OR all_abilities:*{query}* OR flavor_text:{query})'
+                query = f'{{!qf="name^5 types^2 all_abilities^2 flavor_text^1 spellcheck_base^1" defType=edismax}}{query}'
 
         filters = []
         
