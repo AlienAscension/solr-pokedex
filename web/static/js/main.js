@@ -119,7 +119,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalPages = Math.ceil(data.total / rowsPerPage);
         if (totalPages <= 1) return;
 
-        for (let i = 0; i < totalPages; i++) {
+        const maxVisiblePages = 10;
+        const currentPageGroup = Math.floor(currentPage / maxVisiblePages);
+        const startPage = currentPageGroup * maxVisiblePages;
+        const endPage = Math.min(startPage + maxVisiblePages, totalPages);
+
+        // Previous group button
+        if (startPage > 0) {
+            const prevGroupBtn = document.createElement('a');
+            prevGroupBtn.href = '#';
+            prevGroupBtn.textContent = '« Previous 10';
+            prevGroupBtn.className = 'pagination-nav';
+            prevGroupBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                search(searchQuery.value, startPage - 1);
+            });
+            paginationDiv.appendChild(prevGroupBtn);
+        }
+
+        // Page numbers
+        for (let i = startPage; i < endPage; i++) {
             const pageLink = document.createElement('a');
             pageLink.href = '#';
             pageLink.textContent = i + 1;
@@ -131,6 +150,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 search(searchQuery.value, i);
             });
             paginationDiv.appendChild(pageLink);
+        }
+
+        // Next group button
+        if (endPage < totalPages) {
+            const nextGroupBtn = document.createElement('a');
+            nextGroupBtn.href = '#';
+            nextGroupBtn.textContent = 'Next 10 »';
+            nextGroupBtn.className = 'pagination-nav';
+            nextGroupBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                search(searchQuery.value, endPage);
+            });
+            paginationDiv.appendChild(nextGroupBtn);
         }
     };
 
