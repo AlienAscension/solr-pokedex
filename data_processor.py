@@ -138,8 +138,10 @@ class DataProcessor:
             
             # Generation (based on ID ranges)
             pokemon_id = basic_data['id']
-            generation = 1
-            if 152 <= pokemon_id <= 251:
+            generation = None
+            if 1 <= pokemon_id <= 151:
+                generation = 1
+            elif 152 <= pokemon_id <= 251:
                 generation = 2
             elif 252 <= pokemon_id <= 386:
                 generation = 3
@@ -155,8 +157,7 @@ class DataProcessor:
                 generation = 8
             elif 906 <= pokemon_id <= 1025:
                 generation = 9
-            else:
-                generation = None  # optional fallback, falls neue IDs auftauchen
+            # No else needed, as generation will remain None if not matched
 
             doc['generation'] = generation
             
