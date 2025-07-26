@@ -31,44 +31,44 @@ class SolrIndexer:
         logger.info("Setting up Solr schema...")
         
         fields_to_configure = [
-            # Field that caused the original error
-            {'name': 'pokemon_id', 'type': 'pint', 'multiValued': False, 'docValues': True},
-            
-            # Other fields good for sorting/faceting
-            {'name': 'name', 'type': 'string', 'docValues': True},
-            {'name': 'height', 'type': 'pint', 'docValues': True},
-            {'name': 'weight', 'type': 'pint', 'docValues': True},
-            {'name': 'base_experience', 'type': 'pint', 'docValues': True},
-            {'name': 'primary_type', 'type': 'string', 'docValues': True},
-            {'name': 'total_stats', 'type': 'pint', 'docValues': True},
-            {'name': 'generation', 'type': 'pint', 'docValues': True},
-            {'name': 'color', 'type': 'string', 'docValues': True},
-            {'name': 'habitat', 'type': 'string', 'docValues': True},
-            {'name': 'capture_rate', 'type': 'pint', 'docValues': True},
-            {'name': 'is_legendary', 'type': 'boolean', 'docValues': True},
-            {'name': 'is_mythical', 'type': 'boolean', 'docValues': True},
-            
-            # All individual stats
-            {'name': 'stat_hp', 'type': 'pint', 'docValues': True},
-            {'name': 'stat_attack', 'type': 'pint', 'docValues': True},
-            {'name': 'stat_defense', 'type': 'pint', 'docValues': True},
-            {'name': 'stat_special_attack', 'type': 'pint', 'docValues': True},
-            {'name': 'stat_special_defense', 'type': 'pint', 'docValues': True},
-            {'name': 'stat_speed', 'type': 'pint', 'docValues': True},
+        # Field that caused the original error
+        {'name': 'pokemon_id', 'type': 'pint', 'multiValued': False, 'docValues': True, 'indexed': False, 'stored': True},
+        
+        # Other fields good for sorting/faceting
+        {'name': 'name', 'type': 'string', 'docValues': True, 'indexed': True, 'stored': True},
+        {'name': 'height', 'type': 'pint', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'weight', 'type': 'pint', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'base_experience', 'type': 'pint', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'primary_type', 'type': 'string', 'docValues': True, 'indexed': True, 'stored': True},
+        {'name': 'total_stats', 'type': 'pint', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'generation', 'type': 'pint', 'docValues': True, 'indexed': True, 'stored': True},
+        {'name': 'color', 'type': 'string', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'habitat', 'type': 'string', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'capture_rate', 'type': 'pint', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'is_legendary', 'type': 'boolean', 'docValues': True, 'indexed': True, 'stored': True},
+        {'name': 'is_mythical', 'type': 'boolean', 'docValues': True, 'indexed': True, 'stored': True},
+        
+        # All individual stats - used only for sorting/display
+        {'name': 'stat_hp', 'type': 'pint', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'stat_attack', 'type': 'pint', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'stat_defense', 'type': 'pint', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'stat_special_attack', 'type': 'pint', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'stat_special_defense', 'type': 'pint', 'docValues': True, 'indexed': False, 'stored': True},
+        {'name': 'stat_speed', 'type': 'pint', 'docValues': True, 'indexed': False, 'stored': True},
 
-            # Add definitions for other fields created by the script
-            {'name': 'id', 'type': 'string', 'required': True}, # 'id' is special
-            {'name': 'flavor_text', 'type': 'text_general'}, # Changed from text_en to text_general
-            {'name': 'types', 'type': 'strings'},
-            {'name': 'secondary_type', 'type': 'string'},
-            {'name': 'abilities', 'type': 'strings'},
-            {'name': 'hidden_abilities', 'type': 'strings'},
-            {'name': 'all_abilities', 'type': 'strings'},
-            {'name': 'evolves_from', 'type': 'string'},
-            {'name': 'name_spell', 'type': 'text_general', 'indexed': True, 'stored': True, 'multiValued': True, 'termVectors': True},
-            {'name': 'spellcheck_base', 'type': 'text_general', 'indexed': True, 'stored': True, 'multiValued': True},
-            {'name': 'levelup_moves', 'type': 'strings', 'multiValued': True},
-        ]
+        # Add definitions for other fields created by the script
+        {'name': 'id', 'type': 'string', 'required': True, 'indexed': True, 'stored': True},
+        {'name': 'flavor_text', 'type': 'text_general', 'indexed': True, 'stored': True},
+        {'name': 'types', 'type': 'strings', 'indexed': True, 'stored': True},
+        {'name': 'secondary_type', 'type': 'string', 'indexed': True, 'stored': True},
+        {'name': 'abilities', 'type': 'strings', 'indexed': True, 'stored': True},
+        {'name': 'hidden_abilities', 'type': 'strings', 'indexed': True, 'stored': True},
+        {'name': 'all_abilities', 'type': 'strings', 'indexed': True, 'stored': True},
+        {'name': 'evolves_from', 'type': 'string', 'indexed': True, 'stored': True},
+        {'name': 'name_spell', 'type': 'text_general', 'indexed': True, 'stored': True, 'multiValued': True, 'termVectors': True},
+        {'name': 'spellcheck_base', 'type': 'text_general', 'indexed': True, 'stored': True, 'multiValued': True},
+        {'name': 'levelup_moves', 'type': 'strings', 'multiValued': True, 'indexed': True, 'stored': True},
+    ]
         
         copy_fields_to_configure = [
             {'source': 'name', 'dest': 'name_spell'},

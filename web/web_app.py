@@ -111,24 +111,40 @@ class PokemonSearchApp:
             # Build sort parameter
             sort_param = f"{sort_field} {sort_order}"
             
-            # Execute main search with enhanced substring matching
-            # If it's a simple term search, try wildcard matching first
-            if query and query != '*:*' and ' ' not in query and len(query) > 2:
-                # Try wildcard search for partial matches
-                wildcard_query = f'name:*{query}* OR name:*{query.capitalize()}*'
+            # IMPROVED QUERY STRATEGY
+            # Always use edismax for better ability/type search, but optimize for different scenarios
+            if query and query != '*:*':
+                query_lower = query.lower().strip()
+                
+                # Check if query matches an ability or type dynamically
+                is_ability = self.check_if_ability(query_lower)
+                is_type = self.check_if_type(query_lower)
+                
+                logger.info(f"Query analysis for '{query}': is_ability={is_ability}, is_type={is_type}")
+                
+                # Enhanced query building based on what the query actually represents
+                if is_ability:
+                    # For abilities, search in ability fields with proper case matching
+                    title_query = query.title()
+                    enhanced_query = f'name:*{query}* OR all_abilities:"{title_query}" OR all_abilities:*{title_query}*'
+                    logger.info(f"Using ability search strategy: {enhanced_query}")
+                elif is_type:
+                    # For types, search in type fields
+                    title_query = query.title()
+                    enhanced_query = f'name:*{query}* OR types:*{title_query}* OR primary_type:{title_query} OR secondary_type:{title_query}'
+                    logger.info(f"Using type search strategy: {enhanced_query}")
+                elif len(query) <= 3 or ' ' not in query:
+                    # Short queries or single words: enhanced wildcard + edismax
+                    enhanced_query = f'name:*{query}* OR name:*{query.capitalize()}*'
+                    logger.info(f"Using short query strategy: {enhanced_query}")
+                else:
+                    # Regular multi-word queries: use original query
+                    enhanced_query = query
+                    logger.info(f"Using standard query strategy: {enhanced_query}")
+                
+                # Use edismax for most queries to leverage field boosting
                 params = {
-                    'q': wildcard_query,
-                    'start': start,
-                    'rows': rows,
-                    'sort': sort_param,
-                    'facet': 'true',
-                    'facet.field': ['generation', 'primary_type', 'color', 'habitat'],
-                    'facet.mincount': 1,
-                }
-            else:
-                # Use edismax for complex queries
-                params = {
-                    'q': query,
+                    'q': enhanced_query,
                     'start': start,
                     'rows': rows,
                     'sort': sort_param,
@@ -136,11 +152,22 @@ class PokemonSearchApp:
                     'facet.field': ['generation', 'primary_type', 'color', 'habitat'],
                     'facet.mincount': 1,
                     'defType': 'edismax',
-                    'qf': 'name^5 types^2 all_abilities^2 flavor_text^1',
+                    'qf': 'name^5 types^3 all_abilities^3 flavor_text^1',  # Increased ability/type weight
                     'mm': '1',
                     'qs': '2',
                     'ps': '2', 
                     'tie': '0.1',
+                }
+            else:
+                # Empty query - search all
+                params = {
+                    'q': '*:*',
+                    'start': start,
+                    'rows': rows,
+                    'sort': sort_param,
+                    'facet': 'true',
+                    'facet.field': ['generation', 'primary_type', 'color', 'habitat'],
+                    'facet.mincount': 1,
                 }
             
             if filters:
@@ -148,38 +175,32 @@ class PokemonSearchApp:
                 
             results = self.solr.search(**params)
 
-            # Fetch spellcheck suggestions separately
+            # Fetch spellcheck suggestions separately (unchanged)
             suggestions = []
             collated_suggestion = None
-            if query.strip() and query != '*:*': # Only request spellcheck if there's a real query
+            if query.strip() and query != '*:*':
                 spellcheck_params = {
                     'q': query,
                     'spellcheck': 'true',
-                    'spellcheck.build': 'true', # This was the missing piece!
+                    'spellcheck.build': 'true',
                     'spellcheck.collate': 'true',
                     'spellcheck.maxCollations': 5,
                     'spellcheck.dictionary': 'default',
                     'spellcheck.extendedResults': 'true',
-                    'wt': 'json' # Ensure JSON response
+                    'wt': 'json'
                 }
                 try:
                     spellcheck_response = requests.get(f"{self.solr.url.rstrip('/')}/spell", params=spellcheck_params)
                     spellcheck_response.raise_for_status()
                     spellcheck_data = spellcheck_response.json()
-                    logger.info(f"Raw spellcheck response: {spellcheck_data}")
 
                     if spellcheck_data.get('spellcheck') and spellcheck_data['spellcheck'].get('suggestions'):
-                        # Solr's spellcheck suggestions can be an array with the term and then the suggestion object
-                        # We need to iterate through them to find the actual suggestions
                         for item in spellcheck_data['spellcheck']['suggestions']:
                             if isinstance(item, dict) and item.get('suggestion'):
                                 suggestions.extend([s['word'] for s in item['suggestion']])
                         
                         if spellcheck_data['spellcheck'].get('collations'):
                             collations_list = spellcheck_data['spellcheck']['collations']
-                            # Collations can be a list of [original, corrected] or just [corrected]
-                            # We want the corrected one, which is usually the second element if both are present
-                            # or the first if only one is present.
                             if len(collations_list) > 1 and isinstance(collations_list[1], str):
                                 collated_suggestion = collations_list[1]
                             elif len(collations_list) > 0 and isinstance(collations_list[0], str):
@@ -187,7 +208,6 @@ class PokemonSearchApp:
                 except requests.exceptions.RequestException as e:
                     logger.error(f"Error fetching spellcheck suggestions: {e}")
 
-            
             # Format response
             response = {
                 'success': True,
@@ -219,6 +239,58 @@ class PokemonSearchApp:
                 'total': 0,
                 'results': []
             }), 500
+    
+    def check_if_ability(self, query: str) -> bool:
+        """
+        Check if the query matches any ability in the database
+        
+        Args:
+            query: Search query in lowercase
+            
+        Returns:
+            True if query matches an ability
+        """
+        try:
+            # Quick check using facets to see if this ability exists
+            title_query = query.title()
+            results = self.solr.search(
+                f'all_abilities:"{title_query}"',
+                rows=0,  # We only care about count
+                facet='true',
+                facet_field='all_abilities',
+                facet_mincount=1
+            )
+            logger.info(f"Ability check for '{query}' ('{title_query}'): {results.hits} hits")
+            return results.hits > 0
+        except Exception as e:
+            logger.warning(f"Error checking ability: {e}")
+            return False
+    
+    def check_if_type(self, query: str) -> bool:
+        """
+        Check if the query matches any type in the database
+        
+        Args:
+            query: Search query in lowercase
+            
+        Returns:
+            True if query matches a type
+        """
+        try:
+            # Quick check using facets to see if this type exists
+            title_query = query.title()
+            results = self.solr.search(
+                f'(primary_type:{title_query} OR secondary_type:{title_query})',
+                rows=0,  # We only care about count
+                facet='true',
+                facet_field=['primary_type', 'secondary_type'],
+                facet_mincount=1
+            )
+            logger.info(f"Type check for '{query}' ('{title_query}'): {results.hits} hits")
+            return results.hits > 0
+        except Exception as e:
+            logger.warning(f"Error checking type: {e}")
+            return False
     
     def build_solr_filters(self, generation: Optional[str], 
                         pokemon_type: Optional[str], ability: Optional[str],
