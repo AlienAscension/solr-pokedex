@@ -94,6 +94,11 @@
             background-color: #f8f9fa;
         }
 
+        .autocomplete-item strong {
+            color: #667eea;
+            font-weight: bold;
+        }
+
         .search-btn {
             padding: 15px 30px;
             background: linear-gradient(45deg, #667eea, #764ba2);

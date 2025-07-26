@@ -381,17 +381,30 @@ class PokemonSearchApp:
                             for i in range(0, len(terms_list), 2):
                                 if i < len(terms_list):
                                     term = terms_list[i]
+                                    # Case-insensitive matching for terms
                                     if term.lower().startswith(query.lower()) and term not in suggestions:
                                         suggestions.append(term)
                                         
             except requests.exceptions.RequestException as e:
                 logger.warning(f"Terms request failed: {e}")
             
-            # Also get Pokemon name suggestions by doing a prefix search
+            # Get Pokemon name suggestions using case-insensitive wildcard search
             try:
+                # Create multiple variations of the query to catch different cases
+                query_variations = [
+                    query.lower(),
+                    query.capitalize(), 
+                    query.upper(),
+                    query  # original case
+                ]
+                
+                # Build a query that searches for any of these variations
+                name_queries = [f'name:{var}*' for var in set(query_variations)]
+                combined_query = ' OR '.join(name_queries)
+                
                 name_params = {
-                    'q': f'name:{query}*',
-                    'rows': 10,
+                    'q': combined_query,
+                    'rows': 15,
                     'fl': 'name',
                     'wt': 'json'
                 }
@@ -403,7 +416,8 @@ class PokemonSearchApp:
                 if name_data.get('response', {}).get('docs'):
                     for doc in name_data['response']['docs']:
                         name = doc.get('name', '')
-                        if name and name not in suggestions:
+                        # Filter to only include names that actually start with our query (case-insensitive)
+                        if name and name.lower().startswith(query.lower()) and name not in suggestions:
                             suggestions.append(name)
                             
             except requests.exceptions.RequestException as e:

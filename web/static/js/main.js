@@ -163,7 +163,21 @@ document.addEventListener('DOMContentLoaded', () => {
             suggestions.forEach((suggestion, index) => {
                 const suggestionItem = document.createElement('div');
                 suggestionItem.className = 'autocomplete-item';
-                suggestionItem.textContent = suggestion;
+                
+                // Highlight the matching part (case-insensitive)
+                const queryLower = searchQuery.value.toLowerCase();
+                const suggestionLower = suggestion.toLowerCase();
+                const matchIndex = suggestionLower.indexOf(queryLower);
+                
+                if (matchIndex === 0) {
+                    // Highlight the beginning of the suggestion that matches
+                    const matchedPart = suggestion.substring(0, queryLower.length);
+                    const remainingPart = suggestion.substring(queryLower.length);
+                    suggestionItem.innerHTML = `<strong>${matchedPart}</strong>${remainingPart}`;
+                } else {
+                    suggestionItem.textContent = suggestion;
+                }
+                
                 suggestionItem.addEventListener('click', () => {
                     searchQuery.value = suggestion;
                     autocompleteContainer.style.display = 'none';
