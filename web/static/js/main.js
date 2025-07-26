@@ -75,6 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png" alt="${pokemon.name}">
                 <h3>${pokemon.name}</h3>
                 <p>#${pokemon.id}</p>
+                <p style="display: none;">${pokemon.stat_special_attack}</p>
+                <p style="display: none;">${pokemon.stat_special_defense}</p>
             `;
             card.addEventListener('click', () => openModal(pokemon.id));
             resultsGrid.appendChild(card);
@@ -127,20 +129,60 @@ const openModal = async (pokemonId) => {
         if (data.success) {
             const pokemon = data.pokemon;
             modalBody.innerHTML = `
-                <h2>${pokemon.name}</h2>
-                <p><b>ID:</b> ${pokemon.id}</p>
-                <p><b>Type:</b> ${pokemon.types.join(', ')}</p>
-                <p><b>Abilities:</b> ${pokemon.all_abilities.join(', ')}</p>
-                <p><b>Stats:</b></p>
-                <ul>
-                    <li>HP: ${pokemon.stat_hp}</li>
-                    <li>Attack: ${pokemon.stat_attack}</li>
-                    <li>Defense: ${pokemon.stat_defense}</li>
-                    <li>Speed: ${pokemon.stat_speed}</li>
-                </ul>
-                <p>${pokemon.flavor_text}</p>
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png" alt="${pokemon.name}" class="modal-pokemon-image">
+                <div class="modal-pokemon-header">
+                    <h2 class="modal-pokemon-name">${pokemon.name}</h2>
+                    <p class="modal-pokemon-id">#${pokemon.id}</p>
+                </div>
+
+                <div class="modal-section">
+                    <h3 class="modal-section-title">Types</h3>
+                    <div class="modal-types">
+                        ${pokemon.types.map(type => `<span class="type-badge type-${type.toLowerCase()}">${type}</span>`).join('')}
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <h3 class="modal-section-title">Abilities</h3>
+                    <p>${pokemon.all_abilities.join(', ')}</p>
+                </div>
+
+                <div class="modal-section">
+                    <h3 class="modal-section-title">Stats</h3>
+                    <div class="modal-stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">HP</span>
+                            <span class="stat-value">${pokemon.stat_hp}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Attack</span>
+                            <span class="stat-value">${pokemon.stat_attack}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Defense</span>
+                            <span class="stat-value">${pokemon.stat_defense}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Speed</span>
+                            <span class="stat-value">${pokemon.stat_speed}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Special Attack</span>
+                            <span class="stat-value">${pokemon.stat_special_attack}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Special Defense</span>
+                            <span class="stat-value">${pokemon.stat_special_defense}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-section">
+                    <h3 class="modal-section-title">Flavor Text</h3>
+                    <p>${pokemon.flavor_text}</p>
+                </div>
             `;
-            modal.style.display = 'block';
+            modal.classList.add('show');
         } else {
             alert(data.error);
         }
@@ -149,10 +191,10 @@ const openModal = async (pokemonId) => {
     }
 
     const closeBtn = modal.querySelector('.modal-close-btn');
-    closeBtn.onclick = () => modal.style.display = 'none';
+    closeBtn.onclick = () => modal.classList.remove('show');
     window.onclick = (event) => {
         if (event.target == modal) {
-            modal.style.display = 'none';
+            modal.classList.remove('show');
         }
     };
 };
